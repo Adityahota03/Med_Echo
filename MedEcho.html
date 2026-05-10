@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>MedEcho — When You Speak, MedEcho Responds</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#01165182;color:#e2e8f4;font-family:'Nunito',-apple-system,sans-serif;overflow-x:hidden}
+#root{max-width:480px;margin:0 auto;min-height:100vh;background:#03091a}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#00e5c3;border-radius:2px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes sosPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,56,96,.7)}60%{box-shadow:0 0 0 22px rgba(255,56,96,0)}}
+@keyframes heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.2)}28%{transform:scale(1)}42%{transform:scale(1.12)}}
+@keyframes wave{0%,100%{height:5px}50%{height:24px}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes glow{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes ripple{0%{transform:scale(.6);opacity:.8}100%{transform:scale(2.8);opacity:0}}
+@keyframes countDown{0%{transform:scale(1.2);opacity:.6}100%{transform:scale(1);opacity:1}}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-16px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes shimmer{0%{background-position:-300px 0}100%{background-position:300px 0}}
+.fade{animation:fadeIn .38s ease forwards}
+.slide{animation:slideIn .35s ease forwards}
+.brand{font-family:'Rajdhani',sans-serif;font-weight:700}
+.glass{background:rgba(255,255,255,.04);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.07);border-radius:18px}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:12px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:14px;padding:11px 18px;transition:all .18s ease;text-decoration:none;white-space:nowrap;line-height:1}
+.btn:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.1)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-teal{background:linear-gradient(135deg,#00e5c3,#00a896);color:#03091a}
+.btn-red{background:linear-gradient(135deg,#ff3860,#c0392b);color:#fff}
+.btn-purple{background:linear-gradient(135deg,#7b61ff,#5a45e5);color:#fff}
+.btn-orange{background:linear-gradient(135deg,#ff9f43,#e67e22);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.07);color:#e2e8f4;border:1px solid rgba(255,255,255,.1)}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:9px}
+.btn-xs{padding:5px 10px;font-size:11px;border-radius:7px}
+.inp{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 15px;color:#e2e8f4;font-family:'Nunito',sans-serif;font-size:14px;outline:none;transition:border-color .18s,background .18s}
+.inp:focus{border-color:#00e5c3;background:rgba(255,255,255,.08)}
+.inp::placeholder{color:rgba(255,255,255,.28)}
+select.inp option{background:#0a1628}
+.tog{width:44px;height:23px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:background .28s;flex-shrink:0}
+.tog::after{content:'';position:absolute;width:17px;height:17px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .28s,box-shadow .28s}
+.tog.on{background:linear-gradient(90deg,#00e5c3,#00a896)}.tog.on::after{transform:translateX(21px);box-shadow:0 0 8px rgba(0,229,195,.5)}
+.tog.off{background:rgba(255,255,255,.12)}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(3,9,26,.97);backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-around;padding:8px 8px 22px;z-index:200}
+.nbtn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:5px 8px;border-radius:9px;color:rgba(255,255,255,.3);font-family:'Nunito',sans-serif;font-size:10px;font-weight:700;transition:all .18s;position:relative}
+.nbtn.active{color:#00e5c3}.nbtn.active::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:26px;height:3px;border-radius:0 0 3px 3px;background:#00e5c3}
+.nicon{font-size:20px;line-height:1}
+.sos-btn{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#ff3860,#c0392b);border:3px solid rgba(255,56,96,.25);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;margin-top:-28px;animation:sosPulse 1.9s ease-in-out infinite;box-shadow:0 6px 24px rgba(255,56,96,.4);color:#fff;text-decoration:none}
+.page{padding:18px 15px 105px;min-height:100vh}
+.subpage{padding:18px 15px 100px}
+.subhdr{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:13px 15px;z-index:150;background:rgba(3,9,26,.97);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:11px}
+.badge{position:absolute;top:-4px;right:-4px;width:17px;height:17px;border-radius:50%;background:#ff3860;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);max-width:444px;width:calc(100% - 30px);background:rgba(8,18,40,.97);border:1px solid rgba(0,229,195,.25);border-radius:14px;padding:12px 15px;z-index:999;animation:toastIn .3s ease;display:flex;align-items:center;gap:11px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.demo-bar{background:rgba(255,190,11,.1);border-bottom:1px solid rgba(255,190,11,.25);padding:8px 15px;font-size:12px;font-weight:700;color:#ffbe0b;display:flex;align-items:center;gap:7px;position:sticky;top:0;z-index:90}
+.offline-bar{background:rgba(99,130,201,.1);border:1px solid rgba(99,130,201,.22);border-radius:9px;padding:8px 13px;font-size:12px;color:#8ba4d8;font-weight:700;display:flex;gap:7px;align-items:center;margin-bottom:12px}
+.cbubble{max-width:80%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.55;animation:fadeIn .28s ease;white-space:pre-wrap}
+.cbubble.u{background:linear-gradient(135deg,#00e5c3,#00a896);color:#03091a;border-bottom-right-radius:4px;font-weight:700}
+.cbubble.b{background:rgba(255,255,255,.08);color:#e2e8f4;border-bottom-left-radius:4px}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);animation:wave .85s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.14s}.dot:nth-child(3){animation-delay:.28s}
+</style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
+
+/* ══════════════ DATA ══════════════ */
+const SYMP={
+  fever:{causes:"Viral/bacterial infection, flu, COVID-19, malaria",aid:"Rest, hydrate, take paracetamol 500mg, apply cool compress. See doctor if >104°F or persists 3+ days.",sev:"medium",doc:"General Physician",em:"🌡️"},
+  headache:{causes:"Tension, dehydration, migraine, eye strain, poor sleep",aid:"Rest in dark quiet room, drink 2 glasses water, take OTC pain reliever, cold compress on forehead.",sev:"mild",doc:"Neurologist",em:"🤕"},
+  "chest pain":{causes:"Angina, heart attack, GERD, muscle strain, anxiety",aid:"⚠️ SERIOUS! Sit down, loosen clothing, chew aspirin if available. CALL EMERGENCY immediately if severe or radiating!",sev:"severe",doc:"Cardiologist",em:"💔"},
+  cough:{causes:"Cold, flu, allergies, asthma, GERD, COVID-19",aid:"Warm honey-ginger tea, steam inhalation 2×/day, throat lozenges, rest. See doctor if persists 7+ days.",sev:"mild",doc:"Pulmonologist",em:"😷"},
+  dizziness:{causes:"Low BP, dehydration, vertigo, anemia, inner ear issue",aid:"Sit or lie down immediately, sip water slowly, eat something if sugar may be low, avoid sudden movements.",sev:"medium",doc:"Neurologist",em:"😵"},
+  nausea:{causes:"Food poisoning, motion sickness, migraine, pregnancy",aid:"Sip cold water or ginger tea, rest upright, eat plain crackers, avoid strong smells and fatty foods.",sev:"mild",doc:"Gastroenterologist",em:"🤢"},
+  "shortness of breath":{causes:"Asthma, COPD, heart failure, pneumonia, anxiety",aid:"⚠️ URGENT! Sit upright, breathe through pursed lips, use inhaler if prescribed. CALL EMERGENCY if severe!",sev:"severe",doc:"Pulmonologist",em:"😮‍💨"},
+  "sore throat":{causes:"Strep, viral pharyngitis, dry air, allergies, reflux",aid:"Warm salt water gargle 3×/day, honey-lemon tea, throat lozenges, stay well hydrated.",sev:"mild",doc:"ENT Specialist",em:"🔴"},
+  "stomach pain":{causes:"Gastritis, IBS, appendicitis, food intolerance, ulcer",aid:"Rest, avoid solid food 2 hrs, sip plain water, warm heating pad. Seek help for sudden or severe pain.",sev:"medium",doc:"Gastroenterologist",em:"🫄"},
+  fatigue:{causes:"Sleep deprivation, anemia, thyroid issue, diabetes, depression",aid:"Adequate rest, iron-rich foods, stay hydrated, reduce screen time. Persistent fatigue needs blood tests.",sev:"mild",doc:"General Physician",em:"😴"},
+  vomiting:{causes:"Food poisoning, migraine, infection, motion sickness",aid:"Sip ORS/water slowly, avoid solid food 4 hrs, prevent dehydration. See doctor if blood is present.",sev:"medium",doc:"Gastroenterologist",em:"🤮"},
+  "back pain":{causes:"Muscle strain, herniated disc, poor posture, kidney issues",aid:"Rest, alternate ice (20 min) & heat, gentle stretching, avoid heavy lifting, sleep on firm mattress.",sev:"mild",doc:"Orthopedic Surgeon",em:"🦴"},
+  rash:{causes:"Allergy, eczema, dermatitis, chickenpox, fungal infection",aid:"Avoid scratching, cool compress, calamine lotion. Seek help for spreading rash, fever, or breathing difficulty.",sev:"medium",doc:"Dermatologist",em:"🩺"},
+  "eye pain":{causes:"Eye strain, conjunctivitis, glaucoma, migraine, foreign body",aid:"Rest eyes, avoid screens, rinse with clean water. See doctor urgently for sudden severe eye pain.",sev:"medium",doc:"Ophthalmologist",em:"👁️"},
+};
+const SEV={
+  mild:{color:"#00c875",bg:"rgba(0,200,117,.13)",label:"MILD",icon:"✓",score:22},
+  medium:{color:"#ffbe0b",bg:"rgba(255,190,11,.13)",label:"MODERATE",icon:"⚠",score:58},
+  severe:{color:"#ff3860",bg:"rgba(255,56,96,.13)",label:"SEVERE",icon:"🚨",score:94},
+};
+const DOCS=[
+  {id:1,name:"Dr. Priya Sharma",spec:"General Physician",rating:4.8,avail:true,exp:"12 yrs",fee:"₹500",init:"PS",color:"#00e5c3"},
+  {id:2,name:"Dr. Rajesh Kumar",spec:"Cardiologist",rating:4.9,avail:true,exp:"18 yrs",fee:"₹1,200",init:"RK",color:"#ff6b8a"},
+  {id:3,name:"Dr. Anita Patel",spec:"Neurologist",rating:4.7,avail:false,exp:"15 yrs",fee:"₹900",init:"AP",color:"#7b61ff"},
+  {id:4,name:"Dr. Suresh Nair",spec:"Pulmonologist",rating:4.6,avail:true,exp:"10 yrs",fee:"₹800",init:"SN",color:"#ffbe0b"},
+  {id:5,name:"Dr. Meena Gupta",spec:"Gastroenterologist",rating:4.8,avail:true,exp:"14 yrs",fee:"₹750",init:"MG",color:"#00c875"},
+  {id:6,name:"Dr. Vikram Singh",spec:"ENT Specialist",rating:4.5,avail:true,exp:"8 yrs",fee:"₹600",init:"VS",color:"#ff9f43"},
+  {id:7,name:"Dr. Kavitha Rao",spec:"Dermatologist",rating:4.7,avail:true,exp:"11 yrs",fee:"₹700",init:"KR",color:"#e84393"},
+  {id:8,name:"Dr. Arun Das",spec:"Orthopedic Surgeon",rating:4.6,avail:false,exp:"20 yrs",fee:"₹1,500",init:"AD",color:"#00cfff"},
+];
+const TIPS=[
+  "💧 Drink 8-10 glasses of water daily for optimal hydration and energy levels.",
+  "🌙 Sleep 7-9 hours every night — quality sleep repairs cells and boosts immunity.",
+  "🏃 Just 30 minutes of daily walking reduces heart disease risk by 35%.",
+  "🥗 Eat the rainbow — different vegetable colors provide unique essential nutrients.",
+  "🧘 5 minutes of deep breathing daily can significantly reduce cortisol stress levels.",
+  "🌞 10 minutes of morning sunlight boosts vitamin D and regulates your body clock.",
+  "🤲 Washing hands for 20 seconds prevents 80% of common infectious diseases.",
+  "🍎 One apple daily provides prebiotic fiber that supports a healthy gut microbiome.",
+];
+const BLOOD=["A+","A-","B+","B-","AB+","AB-","O+","O-"];
+
+/* ══════════════ UTILS ══════════════ */
+const ls=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+const inits=n=>n.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'VV';
+const fmtTime=t=>{const[h,m]=t.split(':').map(Number);return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;};
+const today=()=>new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+function speak(txt,on=true){if(!on||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.rate=.9;u.pitch=1.05;u.volume=.9;window.speechSynthesis.speak(u);}
+
+/* ══════════════ TOAST ══════════════ */
+function Toast({t,close}){
+  useEffect(()=>{if(t){const id=setTimeout(close,3800);return()=>clearTimeout(id);}},[t]);
+  if(!t)return null;
+  return(<div className="toast"><span style={{fontSize:22,flexShrink:0}}>{t.icon||'📢'}</span><div style={{flex:1}}><p style={{fontWeight:700,fontSize:13}}>{t.title}</p>{t.msg&&<p style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:2}}>{t.msg}</p>}</div><button onClick={close} style={{background:'none',border:'none',color:'rgba(255,255,255,.3)',cursor:'pointer',fontSize:16}}>✕</button></div>);
+}
+
+/* ══════════════ SPLASH ══════════════ */
+function Splash({done}){
+  const[p,setP]=useState(0);
+  useEffect(()=>{let n=0;const iv=setInterval(()=>{setP(x=>Math.min(100,x+Math.floor(Math.random()*14+7)));if(++n>=9){clearInterval(iv);setTimeout(done,350);}},350);return()=>clearInterval(iv);},[]);
+  return(
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'radial-gradient(ellipse at 50% 40%,#0a1928 0%,#03091a 70%)',position:'relative',overflow:'hidden'}}>
+      {[280,460,640].map((s,i)=><div key={i} style={{position:'absolute',width:s,height:s,borderRadius:'50%',border:`1px solid rgba(0,229,195,${.06-i*.015})`,animation:`pulse ${2+i*.4}s ease-in-out infinite`,animationDelay:`${i*.25}s`}}/>)}
+      <div style={{textAlign:'center',zIndex:1,animation:'fadeIn .7s ease'}}>
+        <div style={{width:90,height:90,borderRadius:26,background:'linear-gradient(135deg,#00e5c3,#00a896)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 22px',boxShadow:'0 0 60px rgba(0,229,195,.35)',fontSize:38,animation:'heartbeat 1.3s ease-in-out infinite'}}>❤️</div>
+        <h1 className="brand" style={{fontSize:46,letterSpacing:5}}>Med<span style={{color:'#00e5c3'}}>Echo</span></h1>
+        <p style={{color:'rgba(255,255,255,.36)',fontSize:11,marginTop:7,letterSpacing:4}}>SMART HEALTHCARE COMPANION</p>
+        <div style={{marginTop:40,width:220,margin:'40px auto 0'}}>
+          <div style={{height:3,borderRadius:2,background:'rgba(255,255,255,.07)',overflow:'hidden'}}>
+            <div style={{height:'100%',width:`${p}%`,borderRadius:2,background:'linear-gradient(90deg,#00e5c3,#7b61ff)',transition:'width .33s ease'}}/>
+          </div>
+          <p style={{color:'rgba(255,255,255,.22)',fontSize:10,marginTop:9,letterSpacing:1.5,textAlign:'center'}}>LOADING {p}%</p>
+        </div>
+      </div>
+      <p className="brand" style={{position:'absolute',bottom:36,color:'rgba(255,255,255,.12)',letterSpacing:3,fontSize:11}}>v2.0 · ODISHA, INDIA</p>
+    </div>
+  );
+}
+
+/* ══════════════ AUTH ══════════════ */
+function Auth({onLogin}){
+  const[isLogin,setIsLogin]=useState(true);
+  const[f,setF]=useState({name:'',age:'',email:'',pass:'',emergency:'7735591976',lang:'english',blood:'O+',weight:'',height:''});
+  const[err,setErr]=useState('');
+  const up=(k,v)=>setF(x=>({...x,[k]:v}));
+  function submit(){
+    setErr('');
+    if(isLogin){
+      if(!f.email||!f.pass){setErr('Please fill all required fields');return;}
+      const saved=ls('vv_user',null);
+      onLogin(saved&&saved.email===f.email?saved:{name:f.email.split('@')[0],email:f.email,age:'25',emergency:'7735591976',lang:'english',blood:'O+',weight:'70',height:'170'});
+    }else{
+      if(!f.name||!f.email||!f.pass||!f.age){setErr('Please fill all required fields (*)');return;}
+      const u={name:f.name,email:f.email,age:f.age,emergency:f.emergency||'7735591976',lang:f.lang,blood:f.blood,weight:f.weight,height:f.height};
+      lsSet('vv_user',u);onLogin(u);
+    }
+  }
+  const quickDemo=()=>{const u={name:'Aman Patel',email:'aman@vitavoice.com',age:'28',emergency:'7735591976',lang:'english',blood:'O+',weight:'72',height:'175'};lsSet('vv_user',u);onLogin(u);};
+  return(
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',justifyContent:'center',padding:'24px 20px',background:'radial-gradient(ellipse at 50% 0%,#0d1e36 0%,#03091a 60%)'}}>
+      <div style={{textAlign:'center',marginBottom:30,animation:'fadeIn .5s ease'}}>
+        <div style={{width:66,height:66,borderRadius:20,background:'linear-gradient(135deg,#00e5c3,#00a896)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:28,boxShadow:'0 0 30px rgba(0,229,195,.3)',animation:'heartbeat 1.4s infinite'}}>❤️</div>
+        <h1 className="brand" style={{fontSize:32,letterSpacing:2}}>Med<span style={{color:'#00e5c3'}}>Echo</span></h1>
+        <p style={{color:'rgba(255,255,255,.32)',fontSize:11,marginTop:5,letterSpacing:2}}>SMART HEALTHCARE · v2.0</p>
+      </div>
+      <div style={{display:'flex',gap:4,padding:5,background:'rgba(255,255,255,.04)',borderRadius:14,marginBottom:20}}>
+        {['Login','Register'].map((t,i)=><button key={t} onClick={()=>{setIsLogin(i===0);setErr('');}} className="btn" style={{flex:1,borderRadius:10,padding:10,background:(isLogin?i===0:i===1)?'linear-gradient(135deg,#00e5c3,#00a896)':'transparent',color:(isLogin?i===0:i===1)?'#03091a':'rgba(255,255,255,.4)',fontSize:14}}>{t}</button>)}
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:11,animation:'fadeIn .4s ease'}}>
+        {!isLogin&&<input className="inp" placeholder="Full Name *" value={f.name} onChange={e=>up('name',e.target.value)}/>}
+        {!isLogin&&<div style={{display:'flex',gap:10}}><input className="inp" placeholder="Age *" type="number" value={f.age} onChange={e=>up('age',e.target.value)} style={{flex:1}}/><select className="inp" value={f.blood} onChange={e=>up('blood',e.target.value)} style={{flex:1}}>{BLOOD.map(b=><option key={b}>{b}</option>)}</select></div>}
+        <input className="inp" placeholder="Email *" type="email" value={f.email} onChange={e=>up('email',e.target.value)}/>
+        <input className="inp" placeholder="Password *" type="password" value={f.pass} onChange={e=>up('pass',e.target.value)}/>
+        {!isLogin&&<><div style={{display:'flex',gap:10}}><input className="inp" placeholder="Weight (kg)" type="number" value={f.weight} onChange={e=>up('weight',e.target.value)} style={{flex:1}}/><input className="inp" placeholder="Height (cm)" type="number" value={f.height} onChange={e=>up('height',e.target.value)} style={{flex:1}}/></div>
+        <input className="inp" placeholder="Emergency Contact (default: 7735591976)" type="tel" value={f.emergency} onChange={e=>up('emergency',e.target.value)}/>
+        <select className="inp" value={f.lang} onChange={e=>up('lang',e.target.value)}><option value="english">🇬🇧 English</option><option value="hindi">🇮🇳 Hindi</option><option value="odia">🇮🇳 Odia</option><option value="bengali">🇮🇳 Bengali</option></select></>}
+        {err&&<p style={{color:'#ff3860',fontSize:12,textAlign:'center',padding:'8px',background:'rgba(255,56,96,.09)',borderRadius:8}}>{err}</p>}
+        <button className="btn btn-teal" onClick={submit} style={{width:'100%',padding:14,fontSize:15,marginTop:4}}>{isLogin?'🔓 Login':'🚀 Create Account'}</button>
+        <div style={{display:'flex',alignItems:'center',gap:10}}><div style={{flex:1,height:1,background:'rgba(255,255,255,.07)'}}/><span style={{color:'rgba(255,255,255,.22)',fontSize:12}}>OR</span><div style={{flex:1,height:1,background:'rgba(255,255,255,.07)'}}/></div>
+        <button className="btn btn-ghost" onClick={quickDemo} style={{width:'100%'}}>⚡ Quick Demo Login</button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════ SOS SCREEN (Phase 4 full) ══════════════ */
+function SOSScreen({user,demo,cancel}){
+  const[cnt,setCnt]=useState(5);
+  const[phase,setPhase]=useState('countdown');
+  const[loc,setLoc]=useState(null);
+  const fired=useRef(false);
+  useEffect(()=>{
+    navigator.geolocation?.getCurrentPosition(
+      p=>setLoc({lat:p.coords.latitude.toFixed(5),lng:p.coords.longitude.toFixed(5)}),
+      ()=>setLoc({lat:'20.29612',lng:'85.82422',approx:true})
+    );if(!navigator.geolocation)setLoc({lat:'20.29612',lng:'85.82422',approx:true});
+  },[]);
+  useEffect(()=>{
+    if(phase!=='countdown')return;
+    if(cnt===0){setPhase('sending');speak('Calling emergency contact now!');setTimeout(()=>{setPhase('done');if(!demo&&!fired.current){fired.current=true;window.location.href='tel:7735591976';}},1500);return;}
+    const t=setTimeout(()=>setCnt(c=>c-1),1000);return()=>clearTimeout(t);
+  },[cnt,phase]);
+  const locTxt=loc?(loc.approx?`20.29612°N, 85.82422°E (approx · Bhubaneswar)`:`${loc.lat}°N, ${loc.lng}°E`):'Acquiring GPS…';
+  return(
+    <div style={{position:'fixed',inset:0,background:'#06020d',zIndex:9999,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:22}}>
+      {[1,2,3].map(i=><div key={i} style={{position:'absolute',width:70,height:70,borderRadius:'50%',border:'2px solid rgba(255,56,96,.55)',animation:`ripple ${1.3+i*.35}s ease-out infinite`,animationDelay:`${i*.35}s`,pointerEvents:'none'}}/>)}
+      {phase==='countdown'&&<><div style={{width:128,height:128,borderRadius:'50%',background:'linear-gradient(135deg,#ff3860,#8b0000)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 60px rgba(255,56,96,.55)',marginBottom:26,position:'relative',zIndex:1}}><span className="brand" style={{fontSize:66,color:'#fff',animation:'countDown 1s ease infinite'}}>{cnt}</span></div>
+      <h2 className="brand" style={{fontSize:30,letterSpacing:3,color:'#ff6b8a',marginBottom:8}}>SOS ACTIVATED</h2>
+      <p style={{color:'rgba(255,255,255,.5)',fontSize:14,marginBottom:22}}>Calling in {cnt} second{cnt!==1?'s':''}…</p></>}
+      {phase==='sending'&&<><div style={{width:128,height:128,borderRadius:'50%',background:'linear-gradient(135deg,#ff3860,#c0392b)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 60px rgba(255,56,96,.5)',marginBottom:26}}><span style={{fontSize:52}}>📞</span></div><h2 className="brand" style={{fontSize:30,letterSpacing:2,color:'#ff6b8a',marginBottom:8}}>CALLING…</h2><p style={{color:'rgba(255,255,255,.5)',fontSize:14}}>Connecting to 7735591976</p></>}
+      {phase==='done'&&<><div style={{width:128,height:128,borderRadius:'50%',background:'linear-gradient(135deg,#00c875,#009d5f)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 50px rgba(0,200,117,.4)',marginBottom:26}}><span style={{fontSize:52}}>✅</span></div>
+      <h2 className="brand" style={{fontSize:26,letterSpacing:2,color:'#00c875',marginBottom:8,textAlign:'center'}}>{demo?'DEMO — CALL SIMULATED':'CALL INITIATED'}</h2>
+      <p style={{color:'rgba(255,255,255,.5)',fontSize:13,textAlign:'center',marginBottom:6}}>Emergency contact: +91-7735591976</p>
+      {demo&&<div style={{padding:'6px 14px',borderRadius:8,background:'rgba(255,190,11,.13)',border:'1px solid rgba(255,190,11,.28)',fontSize:12,color:'#ffbe0b',fontWeight:700,marginTop:6}}>⚠ Demo Mode — No real call was made</div>}</>}
+      <div className="card" style={{width:'100%',padding:'14px 16px',marginTop:22,marginBottom:18}}>
+        <p style={{fontSize:11,color:'#00e5c3',fontWeight:700,letterSpacing:1,marginBottom:7}}>📍 LOCATION SHARED WITH EMERGENCY CONTACT</p>
+        <p style={{fontSize:13,color:'rgba(255,255,255,.7)',fontFamily:'monospace'}}>{locTxt}</p>
+      </div>
+      <div style={{display:'flex',gap:8,width:'100%',marginBottom:20}}>
+        {[{icon:'👤',val:user?.name||'Patient',label:'Patient'},{icon:'🩸',val:user?.blood||'Unknown',label:'Blood Type'},{icon:'📞',val:'7735591976',label:'SOS Contact'}].map(d=><div key={d.label} style={{flex:1,textAlign:'center',padding:'10px 5px',borderRadius:10,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)'}}>
+          <div style={{fontSize:18,marginBottom:4}}>{d.icon}</div>
+          <div style={{fontSize:11,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.val}</div>
+          <div style={{fontSize:9,color:'rgba(255,255,255,.32)',marginTop:2}}>{d.label}</div>
+        </div>)}
+      </div>
+      {phase==='countdown'?<button className="btn btn-ghost" onClick={cancel} style={{width:'100%',padding:13,fontSize:15}}>✕ Cancel SOS</button>:<button className="btn btn-ghost" onClick={cancel} style={{width:'100%',padding:13,fontSize:15}}>← Return to App</button>}
+    </div>
+  );
+}
+
+/* ══════════════ DASHBOARD ══════════════ */
+function Dashboard({user,hist,nav,notifs,demo}){
+  const tip=useMemo(()=>TIPS[Math.floor(Math.random()*TIPS.length)],[]);
+  const[steps]=useState(()=>ls('vv_steps',6842));
+  const[hr,setHr]=useState(()=>ls('vv_hr',72));
+  const[cal]=useState(()=>ls('vv_cal',342));
+  const h=new Date().getHours();
+  const greet=h<12?'Good Morning ☀️':h<17?'Good Afternoon 🌤️':'Good Evening 🌙';
+  const recent=[...hist].reverse().slice(0,3);
+  const unread=notifs.filter(n=>!n.read).length;
+  useEffect(()=>{const t=setInterval(()=>setHr(v=>Math.max(58,Math.min(100,v+Math.floor(Math.random()*7-3)))),2800);return()=>clearInterval(t);},[]);
+  const bmi=user?.weight&&user?.height?+(+user.weight/(+user.height/100)**2).toFixed(1):null;
+  const bmiInfo=!bmi?null:bmi<18.5?{l:'Underweight',c:'#00cfff'}:bmi<25?{l:'Normal',c:'#00c875'}:bmi<30?{l:'Overweight',c:'#ffbe0b'}:{l:'Obese',c:'#ff3860'};
+  const score=Math.min(96,Math.max(32,72+Math.round((steps/10000)*14)+Math.round((ls('vv_water',6)/8)*8)-hist.filter(h=>h.sev==='severe').length*12));
+  return(
+    <div className="page fade">
+      {demo&&<div className="demo-bar">🎭 DEMO MODE ON — SOS simulates call; no real messages sent</div>}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+        <div><p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:4}}>{greet}</p><h2 className="brand" style={{fontSize:30,letterSpacing:.5}}>{(user?.name||'User').split(' ')[0]} <span style={{color:'#00e5c3'}}>👋</span></h2></div>
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <button onClick={()=>nav('sub','notifications')} style={{background:'none',border:'none',cursor:'pointer',position:'relative',fontSize:22}}>🔔{unread>0&&<span className="badge">{unread}</span>}</button>
+          <div onClick={()=>nav('sub','profile')} style={{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg,#7b61ff,#00e5c3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:'#03091a',cursor:'pointer'}}>{inits(user?.name||'VV')}</div>
+        </div>
+      </div>
+      <div style={{display:'flex',gap:9,marginBottom:18}}>
+        {[{icon:'👟',val:steps.toLocaleString(),label:'Steps',color:'#00e5c3'},{icon:'❤️',val:`${hr} bpm`,label:'Heart Rate',color:'#ff6b8a',beat:true},{icon:'🔥',val:String(cal),label:'Calories',color:'#ffbe0b'}].map(s=><div key={s.label} className="glass" style={{flex:1,padding:'13px 9px',textAlign:'center'}}>
+          <div style={{fontSize:21,marginBottom:4,animation:s.beat?'heartbeat 1.3s ease-in-out infinite':undefined}}>{s.icon}</div>
+          <div className="brand" style={{fontSize:14,color:s.color}}>{s.val}</div>
+          <div style={{fontSize:10,color:'rgba(255,255,255,.33)',marginTop:2}}>{s.label}</div>
+        </div>)}
+      </div>
+      <div style={{background:'linear-gradient(135deg,rgba(0,229,195,.09),rgba(123,97,255,.07))',border:'1px solid rgba(0,229,195,.18)',borderRadius:18,padding:18,marginBottom:18,display:'flex',alignItems:'center',gap:16}}>
+        <div style={{position:'relative',width:76,height:76,flexShrink:0}}>
+          <svg width="76" height="76" viewBox="0 0 76 76"><circle cx="38" cy="38" r="31" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="6"/><circle cx="38" cy="38" r="31" fill="none" stroke="url(#sg)" strokeWidth="6" strokeLinecap="round" strokeDasharray="194.8" strokeDashoffset={194.8*(1-score/100)} style={{transform:'rotate(-90deg)',transformOrigin:'center'}}/><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#00e5c3"/><stop offset="100%" stopColor="#7b61ff"/></linearGradient></defs></svg>
+          <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}><span className="brand" style={{fontSize:22,color:'#00e5c3',lineHeight:1}}>{score}</span><span style={{fontSize:8,color:'rgba(255,255,255,.36)'}}>SCORE</span></div>
+        </div>
+        <div><p className="brand" style={{fontSize:18,letterSpacing:.5}}>HEALTH <span style={{color:'#00e5c3'}}>SCORE</span></p><p style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:5,lineHeight:1.5}}>Based on activity, vitals & symptom history.</p>{bmiInfo&&<div style={{marginTop:6,display:'inline-flex',alignItems:'center',gap:5,padding:'3px 10px',borderRadius:12,background:`${bmiInfo.c}14`,border:`1px solid ${bmiInfo.c}30`}}><span style={{fontSize:11,fontWeight:700,color:bmiInfo.c}}>BMI {bmi} — {bmiInfo.l}</span></div>}</div>
+      </div>
+      <p style={{fontSize:12,color:'rgba(255,255,255,.35)',letterSpacing:.5,marginBottom:11,fontWeight:700}}>QUICK ACTIONS</p>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,marginBottom:18}}>
+        {[{icon:'🎙️',label:'Check Symptoms',color:'#00e5c3',bg:'rgba(0,229,195,.09)',action:()=>nav('symptoms')},{icon:'👨‍⚕️',label:'Find Doctors',color:'#7b61ff',bg:'rgba(123,97,255,.09)',action:()=>nav('doctors')},{icon:'💊',label:'Medicine Manager',color:'#ffbe0b',bg:'rgba(255,190,11,.09)',action:()=>nav('sub','medicines')},{icon:'📊',label:'Health Report',color:'#ff6b8a',bg:'rgba(255,107,138,.09)',action:()=>nav('sub','report')}].map(a=><button key={a.label} onClick={a.action} className="btn" style={{padding:'15px 13px',display:'flex',flexDirection:'column',alignItems:'flex-start',gap:9,width:'100%',background:a.bg,border:`1px solid ${a.color}22`,borderRadius:15}}>
+          <div style={{width:36,height:36,borderRadius:10,background:`${a.color}1e`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{a.icon}</div>
+          <span style={{fontSize:13,fontWeight:700,color:'#e2e8f4',textAlign:'left',lineHeight:1.2}}>{a.label}</span>
+        </button>)}
+      </div>
+      <div style={{background:'rgba(255,56,96,.08)',border:'1px solid rgba(255,56,96,.18)',borderRadius:15,padding:'14px 15px',marginBottom:18,display:'flex',alignItems:'center',gap:12}}>
+        <div style={{fontSize:28,animation:'sosPulse 1.7s infinite',flexShrink:0}}>🆘</div>
+        <div style={{flex:1}}><p style={{fontWeight:800,fontSize:14,color:'#ff6b8a'}}>Emergency Ready</p><p style={{fontSize:12,color:'rgba(255,255,255,.38)',marginTop:2}}>SOS → calls {user?.emergency||'7735591976'} with GPS location</p></div>
+        <button onClick={()=>nav('sos')} className="btn btn-red btn-sm">SOS</button>
+      </div>
+      <div className="glass" style={{padding:15,marginBottom:18}}><p style={{fontSize:11,color:'#00e5c3',fontWeight:700,marginBottom:6,letterSpacing:1}}>💡 TODAY'S HEALTH TIP</p><p style={{fontSize:13,color:'rgba(255,255,255,.72)',lineHeight:1.65}}>{tip}</p></div>
+      {recent.length>0&&<><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}><p style={{fontSize:12,color:'rgba(255,255,255,.35)',fontWeight:700,letterSpacing:.5}}>RECENT CHECKS</p><button className="btn btn-xs btn-ghost" onClick={()=>nav('sub','history')}>View All</button></div>
+      {recent.map((h,i)=>{const sv=SEV[h.sev];return(<div key={i} className="card" style={{padding:'11px 13px',marginBottom:7,display:'flex',alignItems:'center',gap:11}}><span style={{fontSize:20}}>{h.em||'🩺'}</span><div style={{flex:1}}><p style={{fontWeight:700,fontSize:13,textTransform:'capitalize'}}>{h.sym}</p><p style={{fontSize:11,color:'rgba(255,255,255,.33)',marginTop:2}}>{h.date}</p></div><div style={{padding:'3px 9px',borderRadius:20,background:sv.bg,color:sv.color,fontSize:10,fontWeight:800}}>{sv.icon} {sv.label}</div></div>);})}</>}
+    </div>
+  );
+}
+
+/* ══════════════ SYMPTOMS ══════════════ */
+function Symptoms({onAdd,voice,demo}){
+  const[mode,setMode]=useState('idle');
+  const[transcript,setTranscript]=useState('');
+  const[typed,setTyped]=useState('');
+  const[result,setResult]=useState(null);
+  const rec=useRef(null);
+  function findSym(txt){const low=txt.toLowerCase();for(const[k,v]of Object.entries(SYMP)){if(low.includes(k))return{sym:k,...v};}return null;}
+  function analyze(txt){
+    const found=findSym(txt);
+    if(found){setResult(found);setMode('result');const sv=SEV[found.sev];speak(`Detected ${found.sym}. Severity: ${sv.label}. ${found.aid}`,voice);onAdd({sym:found.sym,sev:found.sev,em:found.em,date:today()});}
+    else{setMode('idle');speak('Could not identify a symptom. Please describe more clearly.',voice);}
+  }
+  function startVoice(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){alert('Voice recognition needs Chrome browser. Please use Chrome or type below.');return;}
+    const r=new SR();r.lang='en-US';r.continuous=false;r.interimResults=false;
+    r.onresult=e=>{const t=e.results[0][0].transcript;setTranscript(t);analyze(t);};
+    r.onerror=()=>setMode('idle');r.onend=()=>{if(mode==='listening')setMode('idle');};
+    rec.current=r;r.start();setMode('listening');setResult(null);
+    speak('Listening now. Please describe your symptoms.',voice);
+  }
+  function stopVoice(){rec.current?.stop();setMode('idle');}
+  const sv=result?SEV[result.sev]:null;
+  return(
+    <div className="page fade">
+      {demo&&<div className="demo-bar">🎭 Demo Mode Active</div>}
+      <h2 className="brand" style={{fontSize:26,letterSpacing:.5,marginBottom:4}}>SYMPTOM <span style={{color:'#00e5c3'}}>CHECKER</span></h2>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:22}}>AI-powered symptom analysis with first-aid guidance</p>
+      <div style={{textAlign:'center',marginBottom:22}}>
+        <button onClick={mode==='listening'?stopVoice:startVoice} style={{width:122,height:122,borderRadius:'50%',border:`3px solid ${mode==='listening'?'rgba(255,56,96,.4)':'rgba(0,229,195,.3)'}`,background:mode==='listening'?'linear-gradient(135deg,#ff3860,#c0392b)':'linear-gradient(135deg,#00e5c3,#00a896)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:42,boxShadow:mode==='listening'?'0 0 44px rgba(255,56,96,.45)':'0 0 36px rgba(0,229,195,.28)',animation:mode==='listening'?'sosPulse 1.2s infinite':undefined,transition:'all .28s ease'}}>{mode==='listening'?'⏹️':'🎙️'}</button>
+        {mode==='listening'&&<div style={{marginTop:14,display:'flex',gap:5,justifyContent:'center',alignItems:'flex-end',height:30}}>{[0,1,2,3,4,5].map(i=><div key={i} style={{width:4,background:'#00e5c3',borderRadius:2,animation:`wave .65s ease-in-out infinite`,animationDelay:`${i*.1}s`}}/>)}</div>}
+        <p style={{marginTop:11,fontSize:13,color:'rgba(255,255,255,.36)'}}>{mode==='idle'?'Tap to speak your symptoms':mode==='listening'?'🔴 Listening — speak clearly…':'✅ Analysis complete'}</p>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}><div style={{flex:1,height:1,background:'rgba(255,255,255,.07)'}}/><span style={{color:'rgba(255,255,255,.22)',fontSize:12}}>OR TYPE</span><div style={{flex:1,height:1,background:'rgba(255,255,255,.07)'}}/></div>
+      <div style={{display:'flex',gap:9,marginBottom:20}}>
+        <input className="inp" placeholder="e.g., I have fever and headache since yesterday…" value={typed} onChange={e=>setTyped(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&typed.trim()){setTranscript(typed);analyze(typed);}}} style={{flex:1}}/>
+        <button className="btn btn-teal" onClick={()=>{if(typed.trim()){setTranscript(typed);analyze(typed);}}} style={{padding:'12px 16px',flexShrink:0}}>🔍</button>
+      </div>
+      {transcript&&<div className="card" style={{padding:'12px 15px',marginBottom:16}}><p style={{fontSize:11,color:'#00e5c3',fontWeight:700,letterSpacing:1,marginBottom:5}}>🎤 DETECTED INPUT</p><p style={{fontSize:14,fontStyle:'italic',color:'rgba(255,255,255,.68)'}}>&ldquo;{transcript}&rdquo;</p></div>}
+      {result&&sv&&<div className="slide">
+        <div style={{padding:17,borderRadius:17,background:sv.bg,border:`1px solid ${sv.color}38`,marginBottom:13,display:'flex',alignItems:'center',gap:15}}>
+          <div style={{fontSize:42}}>{result.em}</div>
+          <div><p className="brand" style={{fontSize:24,textTransform:'capitalize'}}>{result.sym}</p>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,marginTop:5,padding:'4px 12px',borderRadius:20,background:sv.color,color:'#03091a'}}><span>{sv.icon}</span><span className="brand" style={{fontSize:13,letterSpacing:.5}}>{sv.label} RISK</span></div></div>
+        </div>
+        <div className="card" style={{padding:14,marginBottom:11}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:9}}><span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.45)',letterSpacing:.5}}>RISK SCORE</span><span className="brand" style={{fontSize:18,color:sv.color}}>{sv.score}/100</span></div>
+          <div style={{height:8,borderRadius:4,background:'rgba(255,255,255,.07)',overflow:'hidden',marginBottom:6}}><div style={{height:'100%',width:`${sv.score}%`,borderRadius:4,background:sv.color,transition:'width 1s ease'}}/></div>
+          <div style={{display:'flex',justifyContent:'space-between'}}><span style={{fontSize:9,color:'#00c875'}}>SAFE</span><span style={{fontSize:9,color:'#ffbe0b'}}>MODERATE</span><span style={{fontSize:9,color:'#ff3860'}}>CRITICAL</span></div>
+        </div>
+        {[{icon:'🔬',label:'POSSIBLE CAUSES',text:result.causes,c:'#7b61ff'},{icon:'🩹',label:'FIRST AID',text:result.aid,c:'#00e5c3'},{icon:'👨‍⚕️',label:'SEE A SPECIALIST',text:result.doc,c:'#ffbe0b'}].map(d=><div key={d.label} className="card" style={{padding:'13px 15px',marginBottom:9}}>
+          <p style={{fontSize:11,color:d.c,fontWeight:700,letterSpacing:1,marginBottom:6}}>{d.icon} {d.label}</p>
+          <p style={{fontSize:14,color:'rgba(255,255,255,.8)',lineHeight:1.65}}>{d.text}</p>
+        </div>)}
+        {result.sev==='severe'&&<a href="tel:7735591976" className="btn btn-red" style={{width:'100%',marginTop:6,fontSize:16,padding:15,textDecoration:'none',borderRadius:13,animation:'sosPulse 1.5s infinite',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>🆘 CALL EMERGENCY — 7735591976</a>}
+        <button className="btn btn-ghost" onClick={()=>{setResult(null);setTranscript('');setTyped('');setMode('idle');}} style={{width:'100%',marginTop:9}}>🔄 Check Another Symptom</button>
+      </div>}
+      {!result&&<div><p style={{fontSize:12,color:'rgba(255,255,255,.32)',marginBottom:9}}>Quick picks:</p><div style={{display:'flex',flexWrap:'wrap',gap:7}}>{Object.entries(SYMP).map(([k,v])=><button key={k} className="btn btn-ghost btn-sm" onClick={()=>{setTyped(k);setTranscript(k);analyze(k);}} style={{borderRadius:20,fontSize:12}}>{v.em} {k}</button>)}</div></div>}
+    </div>
+  );
+}
+
+/* ══════════════ REMINDERS ══════════════ */
+function Reminders({voice}){
+  const[rems,setRems]=useState(()=>ls('vv_rems',[
+    {id:1,medicine:'Paracetamol',dose:'500mg',time:'08:00',on:true,repeat:'Daily'},
+    {id:2,medicine:'Vitamin D3',dose:'1 capsule',time:'13:00',on:true,repeat:'Daily'},
+    {id:3,medicine:'BP Medication',dose:'10mg',time:'20:00',on:false,repeat:'Daily'},
+  ]));
+  const[showAdd,setShowAdd]=useState(false);
+  const[nw,setNw]=useState({medicine:'',dose:'',time:'09:00',repeat:'Daily'});
+  useEffect(()=>lsSet('vv_rems',rems),[rems]);
+  const toggle=id=>setRems(r=>r.map(x=>x.id===id?{...x,on:!x.on}:x));
+  const del=id=>setRems(r=>r.filter(x=>x.id!==id));
+  function add(){if(!nw.medicine||!nw.time)return;setRems(r=>[...r,{...nw,id:Date.now(),on:true}]);setNw({medicine:'',dose:'',time:'09:00',repeat:'Daily'});setShowAdd(false);}
+  const testAlert=r=>speak(`Reminder! Time to take ${r.medicine}. Dose: ${r.dose||'as prescribed'}.`,voice);
+  const active=rems.filter(r=>r.on);
+  return(
+    <div className="page fade">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}><h2 className="brand" style={{fontSize:26,letterSpacing:.5}}>MEDICINE <span style={{color:'#00e5c3'}}>REMINDERS</span></h2><button className="btn btn-teal btn-sm" onClick={()=>setShowAdd(!showAdd)}>+ Add</button></div>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:14}}>Voice-powered medication alerts</p>
+      {!voice&&<div className="offline-bar">🔇 Voice disabled — turn on in Settings → Voice Alerts</div>}
+      {active.length>0&&<div style={{padding:'13px 15px',borderRadius:13,marginBottom:18,background:'rgba(0,229,195,.07)',border:'1px solid rgba(0,229,195,.16)'}}>
+        <p style={{fontSize:11,color:'#00e5c3',fontWeight:700,letterSpacing:1,marginBottom:9}}>📅 TODAY — {active.length} ACTIVE</p>
+        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{active.map(r=><div key={r.id} style={{padding:'5px 11px',borderRadius:20,background:'rgba(0,229,195,.11)',border:'1px solid rgba(0,229,195,.2)',fontSize:12,fontWeight:700}}>💊 {r.medicine} · {fmtTime(r.time)}</div>)}</div>
+      </div>}
+      {showAdd&&<div className="glass" style={{padding:19,marginBottom:18,animation:'fadeIn .3s ease'}}>
+        <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>➕ New Reminder</h3>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          <input className="inp" placeholder="Medicine name *" value={nw.medicine} onChange={e=>setNw({...nw,medicine:e.target.value})}/>
+          <input className="inp" placeholder="Dose (e.g. 500mg)" value={nw.dose} onChange={e=>setNw({...nw,dose:e.target.value})}/>
+          <div style={{display:'flex',gap:9}}><input className="inp" type="time" value={nw.time} onChange={e=>setNw({...nw,time:e.target.value})} style={{flex:1}}/><select className="inp" value={nw.repeat} onChange={e=>setNw({...nw,repeat:e.target.value})} style={{flex:1}}>{['Daily','Twice Daily','Weekly','Monthly','Once'].map(o=><option key={o}>{o}</option>)}</select></div>
+          <div style={{display:'flex',gap:9}}><button className="btn btn-teal" onClick={add} style={{flex:1}}>💾 Save</button><button className="btn btn-ghost" onClick={()=>setShowAdd(false)} style={{flex:1}}>Cancel</button></div>
+        </div>
+      </div>}
+      {rems.length===0?<div style={{textAlign:'center',padding:'50px 0',color:'rgba(255,255,255,.26)'}}><div style={{fontSize:50,marginBottom:14}}>💊</div><p>No reminders yet.</p></div>
+      :rems.map(r=><div key={r.id} className="card" style={{display:'flex',alignItems:'center',gap:12,padding:15,marginBottom:9}}>
+        <div style={{width:44,height:44,borderRadius:12,background:r.on?'rgba(0,229,195,.13)':'rgba(255,255,255,.05)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>💊</div>
+        <div style={{flex:1,minWidth:0}}><p style={{fontWeight:700,fontSize:14,color:r.on?'#e2e8f4':'rgba(255,255,255,.33)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.medicine}</p><p style={{fontSize:11,color:'rgba(255,255,255,.33)',marginTop:2}}>{r.dose||'–'} · {fmtTime(r.time)} · {r.repeat}</p></div>
+        <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+          <button className="btn btn-ghost btn-xs" onClick={()=>testAlert(r)}>🔔</button>
+          <button className={`tog ${r.on?'on':'off'}`} onClick={()=>toggle(r.id)}/>
+          <button className="btn btn-ghost btn-xs" onClick={()=>del(r.id)} style={{color:'#ff3860'}}>✕</button>
+        </div>
+      </div>)}
+    </div>
+  );
+}
+
+/* ══════════════ DOCTORS ══════════════ */
+function Doctors({lastSym}){
+  const[filter,setFilter]=useState('All');
+  const[chatDoc,setChatDoc]=useState(null);
+  const[msgs,setMsgs]=useState([]);
+  const[input,setInput]=useState('');
+  const[loading,setLoading]=useState(false);
+  const endRef=useRef(null);
+  const specs=['All',...new Set(DOCS.map(d=>d.spec))];
+  const filtered=filter==='All'?DOCS:DOCS.filter(d=>d.spec===filter);
+  useEffect(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),[msgs]);
+  async function sendChat(){
+    if(!input.trim()||loading)return;
+    const msg=input.trim();setInput('');
+    setMsgs(p=>[...p,{r:'u',text:msg}]);setLoading(true);
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,
+          system:`You are ${chatDoc.name}, a ${chatDoc.spec} doctor in India. Reply in 2-3 concise, warm, helpful sentences. Always recommend in-person consultation for serious symptoms.`,
+          messages:[...msgs.map(m=>({role:m.r==='u'?'user':'assistant',content:m.text})),{role:'user',content:msg}]})});
+      const data=await res.json();
+      setMsgs(p=>[...p,{r:'d',text:data.content?.[0]?.text||'Thank you. Please book an in-person appointment for a thorough consultation.'}]);
+    }catch{setMsgs(p=>[...p,{r:'d',text:'Thank you for your message. For your concern I recommend resting and staying hydrated. Please visit in person if symptoms persist. Anything else I can help with?'}]);}
+    setLoading(false);
+  }
+  if(chatDoc)return(
+    <div style={{display:'flex',flexDirection:'column',height:'100vh'}}>
+      <div style={{padding:'13px 15px',background:'rgba(3,9,26,.97)',backdropFilter:'blur(18px)',borderBottom:'1px solid rgba(255,255,255,.07)',display:'flex',alignItems:'center',gap:11}}>
+        <button className="btn btn-ghost btn-sm" onClick={()=>setChatDoc(null)}>← Back</button>
+        <div style={{width:36,height:36,borderRadius:'50%',background:`linear-gradient(135deg,${chatDoc.color},#030918)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#fff',flexShrink:0}}>{chatDoc.init}</div>
+        <div><p style={{fontWeight:700,fontSize:14}}>{chatDoc.name}</p><div style={{display:'flex',alignItems:'center',gap:5,marginTop:1}}><div style={{width:6,height:6,borderRadius:'50%',background:'#00c875'}}/><span style={{fontSize:11,color:'#00c875'}}>AI-powered · {chatDoc.spec}</span></div></div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'13px 15px'}}>{msgs.map((m,i)=><div key={i} style={{display:'flex',justifyContent:m.r==='u'?'flex-end':'flex-start',marginBottom:9,alignItems:'flex-end',gap:7}}>
+        {m.r==='d'&&<div style={{width:26,height:26,borderRadius:'50%',background:`linear-gradient(135deg,${chatDoc.color}99,#030918)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:'#fff',flexShrink:0}}>{chatDoc.init}</div>}
+        <div className={`cbubble ${m.r==='u'?'u':'b'}`}>{m.text}</div>
+      </div>)}
+      {loading&&<div style={{display:'flex',alignItems:'flex-end',gap:7,marginBottom:9}}><div style={{width:26,height:26,borderRadius:'50%',background:`linear-gradient(135deg,${chatDoc.color}99,#030918)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:'#fff'}}>{chatDoc.init}</div><div style={{padding:'11px 15px',borderRadius:16,borderBottomLeftRadius:4,background:'rgba(255,255,255,.07)',display:'flex',gap:4,alignItems:'center'}}><div className="dot"/><div className="dot"/><div className="dot"/></div></div>}
+      <div ref={endRef}/></div>
+      <div style={{padding:'11px 15px 26px',borderTop:'1px solid rgba(255,255,255,.07)',background:'rgba(3,9,26,.97)'}}><div style={{display:'flex',gap:9}}><input className="inp" placeholder="Ask the doctor…" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChat()} disabled={loading}/><button className="btn btn-teal" onClick={sendChat} disabled={loading||!input.trim()} style={{padding:'12px 17px',flexShrink:0}}>➤</button></div></div>
+    </div>
+  );
+  return(
+    <div className="page fade">
+      <h2 className="brand" style={{fontSize:26,letterSpacing:.5,marginBottom:5}}>FIND <span style={{color:'#00e5c3'}}>DOCTORS</span></h2>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:16}}>AI-powered chat + real consultations</p>
+      {lastSym&&<div style={{padding:'11px 15px',borderRadius:11,marginBottom:16,background:'rgba(123,97,255,.09)',border:'1px solid rgba(123,97,255,.22)',display:'flex',alignItems:'center',gap:9}}><span style={{fontSize:18}}>💡</span><p style={{fontSize:13,color:'rgba(255,255,255,.75)'}}>For recent <strong style={{color:'#e2e8f4'}}>{lastSym.sym}</strong> we suggest a <strong style={{color:'#7b61ff'}}>{lastSym.doc}</strong></p></div>}
+      <div style={{display:'flex',gap:7,overflowX:'auto',paddingBottom:7,marginBottom:16}}>{specs.map(s=><button key={s} onClick={()=>setFilter(s)} className="btn btn-sm" style={{borderRadius:20,whiteSpace:'nowrap',background:filter===s?'linear-gradient(135deg,#00e5c3,#00a896)':'rgba(255,255,255,.06)',color:filter===s?'#03091a':'rgba(255,255,255,.48)',border:filter===s?'none':'1px solid rgba(255,255,255,.08)'}}>{s}</button>)}</div>
+      {filtered.map(d=><div key={d.id} style={{display:'flex',alignItems:'center',gap:13,padding:15,borderRadius:15,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',marginBottom:11}}>
+        <div style={{width:52,height:52,borderRadius:'50%',flexShrink:0,background:`linear-gradient(135deg,${d.color},#030918)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:'#fff',border:`2px solid ${d.color}30`}}>{d.init}</div>
+        <div style={{flex:1,minWidth:0}}><p style={{fontWeight:700,fontSize:15}}>{d.name}</p><p style={{fontSize:12,color:'rgba(255,255,255,.4)',margin:'2px 0'}}>{d.spec} · {d.exp}</p>
+          <div style={{display:'flex',alignItems:'center',gap:7,marginTop:4,flexWrap:'wrap'}}><span style={{fontSize:12,color:'#ffbe0b'}}>★ {d.rating}</span><span style={{fontSize:12,color:'#00c875',fontWeight:700}}>{d.fee}</span><div style={{display:'flex',alignItems:'center',gap:3}}><div style={{width:6,height:6,borderRadius:'50%',background:d.avail?'#00c875':'#ff3860'}}/><span style={{fontSize:11,color:d.avail?'#00c875':'#ff3860'}}>{d.avail?'Available':'Busy'}</span></div></div>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:5,flexShrink:0}}><a href="tel:7735591976" className="btn btn-teal btn-sm" style={{textDecoration:'none'}}>📞 Call</a><button className="btn btn-purple btn-sm" onClick={()=>{setChatDoc(d);setMsgs([{r:'d',text:`Hello! I'm ${d.name}. How can I help you today?`}]);}}>💬 Chat</button></div>
+      </div>)}
+    </div>
+  );
+}
+
+/* ══════════════ FITNESS ══════════════ */
+function Fitness(){
+  const[steps,setSteps]=useState(()=>ls('vv_steps',6842));
+  const[hr,setHr]=useState(()=>ls('vv_hr',72));
+  const[cal,setCal]=useState(()=>ls('vv_cal',342));
+  const[water,setWater]=useState(()=>ls('vv_water',6));
+  const[sleep,setSleep]=useState(()=>ls('vv_sleep',7.2));
+  const goal=10000;
+  const week=[{d:'Mon',s:4200},{d:'Tue',s:6800},{d:'Wed',s:7200},{d:'Thu',s:5400},{d:'Fri',s:8900},{d:'Sat',s:steps},{d:'Sun',s:0}];
+  const maxW=Math.max(...week.map(d=>d.s),1);
+  useEffect(()=>{const t=setInterval(()=>setHr(h=>Math.max(58,Math.min(100,h+Math.floor(Math.random()*7-3)))),2200);return()=>clearInterval(t);},[]);
+  useEffect(()=>{lsSet('vv_steps',steps);lsSet('vv_hr',hr);lsSet('vv_cal',cal);lsSet('vv_water',water);lsSet('vv_sleep',sleep);},[steps,hr,cal,water,sleep]);
+  function addSteps(){const s=steps+Math.floor(Math.random()*280+80);setSteps(s);setCal(Math.floor(s*.05));}
+  const pct=Math.min(100,(steps/goal)*100);
+  const zone=hr<80?{l:'Resting',c:'#00c875'}:hr<115?{l:'Fat Burn',c:'#ffbe0b'}:hr<150?{l:'Cardio',c:'#ff9f43'}:{l:'Peak',c:'#ff3860'};
+  return(
+    <div className="page fade">
+      <h2 className="brand" style={{fontSize:26,letterSpacing:.5,marginBottom:5}}>FITNESS <span style={{color:'#00e5c3'}}>TRACKER</span></h2>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:20}}>Real-time health & activity metrics</p>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,marginBottom:18}}>
+        {[{icon:'👟',label:'Steps',val:steps.toLocaleString(),sub:`Goal: ${goal.toLocaleString()}`,color:'#00e5c3'},{icon:'❤️',label:'Heart Rate',val:`${hr} bpm`,sub:zone.l,color:'#ff6b8a',beat:true},{icon:'🔥',label:'Calories',val:`${cal} kcal`,sub:'burned today',color:'#ffbe0b'},{icon:'💧',label:'Hydration',val:`${water}/8`,sub:'glasses today',color:'#7b61ff'}].map(s=><div key={s.label} className="glass" style={{padding:17}}>
+          <div style={{fontSize:26,marginBottom:7,animation:s.beat?'heartbeat 1.3s ease-in-out infinite':undefined}}>{s.icon}</div>
+          <div className="brand" style={{fontSize:18,color:s.color}}>{s.val}</div>
+          <div style={{fontSize:11,color:'rgba(255,255,255,.36)',marginTop:2}}>{s.label}</div>
+          <div style={{fontSize:10,color:'rgba(255,255,255,.22)',marginTop:1}}>{s.sub}</div>
+        </div>)}
+      </div>
+      <div className="glass" style={{padding:19,marginBottom:15}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:11}}><p style={{fontWeight:700,fontSize:15}}>Daily Step Goal</p><span className="brand" style={{fontSize:18,color:'#00e5c3'}}>{Math.round(pct)}%</span></div>
+        <div style={{height:9,borderRadius:5,background:'rgba(255,255,255,.07)',overflow:'hidden',marginBottom:7}}><div style={{height:'100%',width:`${pct}%`,borderRadius:5,background:'linear-gradient(90deg,#00e5c3,#7b61ff)',transition:'width 1.1s ease'}}/></div>
+        <p style={{fontSize:12,color:'rgba(255,255,255,.36)',marginBottom:13}}>{steps.toLocaleString()} / {goal.toLocaleString()} · {pct>=100?'🎉 Goal reached!':` ${(goal-steps).toLocaleString()} more to goal`}</p>
+        <div style={{display:'flex',gap:9}}><button className="btn btn-teal btn-sm" onClick={addSteps} style={{flex:1}}>+ Simulate Steps</button><button className="btn btn-ghost btn-sm" onClick={()=>setWater(w=>Math.min(8,w+1))} style={{flex:1}}>💧 Water +1</button><button className="btn btn-ghost btn-sm" onClick={()=>setSleep(s=>Math.min(9,+(s+.5).toFixed(1)))} style={{flex:1}}>😴 Sleep</button></div>
+      </div>
+      <div className="card" style={{padding:17,marginBottom:15,display:'flex',alignItems:'center',gap:15}}>
+        <div style={{fontSize:36}}>😴</div>
+        <div style={{flex:1}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:7}}><p style={{fontWeight:700,fontSize:14}}>Sleep Last Night</p><span className="brand" style={{fontSize:18,color:sleep>=7?'#00c875':'#ffbe0b'}}>{sleep}h</span></div>
+        <div style={{height:6,borderRadius:3,background:'rgba(255,255,255,.07)',overflow:'hidden'}}><div style={{height:'100%',width:`${(sleep/9)*100}%`,borderRadius:3,background:sleep>=7?'#00c875':'#ffbe0b',transition:'width .8s ease'}}/></div>
+        <p style={{fontSize:11,color:'rgba(255,255,255,.33)',marginTop:4}}>{sleep>=7?'✓ Healthy sleep':'Aim for 7–9 hours'}</p></div>
+      </div>
+      <div className="glass" style={{padding:19,marginBottom:15}}><p style={{fontWeight:700,fontSize:15,marginBottom:16}}>Weekly Steps</p>
+        <div style={{display:'flex',alignItems:'flex-end',gap:5,height:88}}>{week.map((d,i)=><div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:5}}>
+          <div style={{width:'100%',borderRadius:'4px 4px 0 0',height:`${(d.s/maxW)*72}px`,background:i===5?'linear-gradient(0deg,#00e5c3,#7b61ff)':'rgba(255,255,255,.1)',minHeight:2,transition:'height .7s ease'}}/>
+          <span style={{fontSize:9,color:'rgba(255,255,255,.3)'}}>{d.d}</span>
+        </div>)}</div>
+      </div>
+      <div className="glass" style={{padding:19}}><p style={{fontWeight:700,fontSize:15,marginBottom:11}}>Heart Rate Zones</p>
+        {[{l:'Resting',r:'< 80 bpm',c:'#00c875',a:hr<80},{l:'Fat Burn',r:'80–114 bpm',c:'#ffbe0b',a:hr>=80&&hr<115},{l:'Cardio',r:'115–149 bpm',c:'#ff9f43',a:hr>=115&&hr<150},{l:'Peak',r:'150+ bpm',c:'#ff3860',a:hr>=150}].map(z=><div key={z.l} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 11px',borderRadius:9,marginBottom:5,background:z.a?`${z.c}13`:'transparent',border:`1px solid ${z.a?z.c+'30':'transparent'}`}}>
+          <span style={{fontSize:13,color:z.a?z.c:'rgba(255,255,255,.4)',fontWeight:z.a?700:400}}>{z.l}</span>
+          <span style={{fontSize:12,color:'rgba(255,255,255,.3)'}}>{z.r}</span>
+          {z.a&&<span style={{fontSize:10,fontWeight:700,color:z.c,animation:'glow 1.5s infinite'}}>● NOW</span>}
+        </div>)}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════ MEDICINES ══════════════ */
+function Medicines(){
+  const[meds,setMeds]=useState(()=>ls('vv_meds',[
+    {id:1,name:'Paracetamol',stock:8,dose:2,unit:'tablets/day',color:'#00e5c3'},
+    {id:2,name:'Vitamin D3',stock:15,dose:1,unit:'capsule/day',color:'#ffbe0b'},
+    {id:3,name:'Metformin',stock:2,dose:2,unit:'tablets/day',color:'#ff6b8a'},
+    {id:4,name:'Omeprazole',stock:22,dose:1,unit:'capsule/day',color:'#7b61ff'},
+  ]));
+  const[showAdd,setShowAdd]=useState(false);
+  const[nw,setNw]=useState({name:'',stock:'',dose:'1',unit:'tablets/day'});
+  useEffect(()=>lsSet('vv_meds',meds),[meds]);
+  const COLORS=['#00e5c3','#7b61ff','#ffbe0b','#ff6b8a','#00c875','#ff9f43'];
+  const add=()=>{if(!nw.name||!nw.stock)return;setMeds(m=>[...m,{...nw,id:Date.now(),stock:+nw.stock||0,dose:+nw.dose||1,color:COLORS[m.length%COLORS.length]}]);setNw({name:'',stock:'',dose:'1',unit:'tablets/day'});setShowAdd(false);};
+  const takeDose=id=>setMeds(m=>m.map(x=>x.id===id&&x.stock>0?{...x,stock:x.stock-1}:x));
+  const refill=id=>setMeds(m=>m.map(x=>x.id===id?{...x,stock:x.stock+30}:x));
+  const del=id=>setMeds(m=>m.filter(x=>x.id!==id));
+  const lowCount=meds.filter(m=>m.dose>0?Math.floor(m.stock/m.dose)<=3:m.stock<=3).length;
+  return(
+    <div className="page fade">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}><h2 className="brand" style={{fontSize:26,letterSpacing:.5}}>MEDICINE <span style={{color:'#00e5c3'}}>MANAGER</span></h2><button className="btn btn-teal btn-sm" onClick={()=>setShowAdd(!showAdd)}>+ Add</button></div>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:14}}>AI stock prediction & refill alerts</p>
+      {lowCount>0&&<div style={{padding:'11px 14px',borderRadius:11,marginBottom:14,background:'rgba(255,56,96,.08)',border:'1px solid rgba(255,56,96,.22)',fontSize:13,fontWeight:700,color:'#ff6b8a'}}>🚨 {lowCount} medicine{lowCount>1?'s':''} running critically low!</div>}
+      {showAdd&&<div className="glass" style={{padding:19,marginBottom:16,animation:'fadeIn .3s ease'}}>
+        <h3 style={{fontSize:15,fontWeight:700,marginBottom:11}}>➕ Add Medicine</h3>
+        <div style={{display:'flex',flexDirection:'column',gap:9}}>
+          <input className="inp" placeholder="Medicine name *" value={nw.name} onChange={e=>setNw({...nw,name:e.target.value})}/>
+          <div style={{display:'flex',gap:9}}><input className="inp" placeholder="Stock" type="number" value={nw.stock} onChange={e=>setNw({...nw,stock:e.target.value})} style={{flex:1}}/><input className="inp" placeholder="Daily dose" type="number" value={nw.dose} onChange={e=>setNw({...nw,dose:e.target.value})} style={{flex:1}}/></div>
+          <select className="inp" value={nw.unit} onChange={e=>setNw({...nw,unit:e.target.value})}>{['tablets/day','capsules/day','ml/day','drops/day','sachets/day'].map(o=><option key={o}>{o}</option>)}</select>
+          <div style={{display:'flex',gap:9}}><button className="btn btn-teal" onClick={add} style={{flex:1}}>💾 Save</button><button className="btn btn-ghost" onClick={()=>setShowAdd(false)} style={{flex:1}}>Cancel</button></div>
+        </div>
+      </div>}
+      {meds.map(m=>{
+        const days=m.dose>0?Math.floor(m.stock/m.dose):m.stock;const low=days<=3;const pct=Math.min(100,(m.stock/30)*100);
+        return(<div key={m.id} className="card" style={{padding:15,marginBottom:11}}>
+          {low&&<div style={{padding:'7px 11px',borderRadius:7,marginBottom:10,background:'rgba(255,56,96,.11)',border:'1px solid rgba(255,56,96,.22)',fontSize:12,color:'#ff6b8a',fontWeight:700}}>🚨 LOW STOCK — {days} day{days!==1?'s':''} remaining. Order now!</div>}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:11}}>
+            <div><p style={{fontWeight:700,fontSize:15}}>{m.name}</p><p style={{fontSize:12,color:'rgba(255,255,255,.38)',marginTop:2}}>{m.dose} {m.unit} · {m.stock} units · {days}d left</p></div>
+            <div style={{padding:'3px 11px',borderRadius:20,fontSize:12,fontWeight:700,background:`${m.color}17`,color:m.color}}>{m.stock} left</div>
+          </div>
+          <div style={{height:6,borderRadius:3,background:'rgba(255,255,255,.07)',overflow:'hidden',marginBottom:12}}><div style={{height:'100%',width:`${pct}%`,borderRadius:3,background:low?'#ff3860':m.color,transition:'width .7s ease'}}/></div>
+          <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+            <button className="btn btn-teal btn-sm" onClick={()=>takeDose(m.id)} disabled={m.stock===0} style={{flex:'1 1 auto'}}>💊 Take Dose</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>refill(m.id)} style={{flex:'1 1 auto'}}>📦 +30 Refill</button>
+            {low&&<a href="tel:7735591976" className="btn btn-orange btn-sm" style={{textDecoration:'none',flex:'1 1 auto'}}>🛒 Order</a>}
+            <button className="btn btn-ghost btn-sm" onClick={()=>del(m.id)} style={{color:'#ff3860',padding:'7px 9px'}}>✕</button>
+          </div>
+        </div>);
+      })}
+      {meds.length===0&&<div style={{textAlign:'center',padding:'50px 0',color:'rgba(255,255,255,.26)'}}><div style={{fontSize:50,marginBottom:14}}>💊</div><p>No medicines yet.</p></div>}
+    </div>
+  );
+}
+
+/* ══════════════ HISTORY ══════════════ */
+function HistoryPage({hist,clear}){
+  const[filter,setFilter]=useState('All');
+  const filtered=filter==='All'?hist:hist.filter(h=>h.sev===filter.toLowerCase());
+  const counts={mild:hist.filter(h=>h.sev==='mild').length,medium:hist.filter(h=>h.sev==='medium').length,severe:hist.filter(h=>h.sev==='severe').length};
+  return(
+    <div className="page fade">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}><h2 className="brand" style={{fontSize:26,letterSpacing:.5}}>HEALTH <span style={{color:'#00e5c3'}}>HISTORY</span></h2>{hist.length>0&&<button className="btn btn-ghost btn-sm" onClick={clear} style={{color:'#ff3860',border:'1px solid rgba(255,56,96,.28)'}}>Clear All</button>}</div>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:16}}>Complete symptom check records</p>
+      {hist.length>0&&<div style={{display:'flex',gap:9,marginBottom:16}}>{[{l:'Mild',v:counts.mild,c:'#00c875'},{l:'Moderate',v:counts.medium,c:'#ffbe0b'},{l:'Severe',v:counts.severe,c:'#ff3860'}].map(s=><div key={s.l} style={{flex:1,textAlign:'center',padding:'11px 7px',borderRadius:11,background:`${s.c}0e`,border:`1px solid ${s.c}26`}}><div className="brand" style={{fontSize:22,color:s.c}}>{s.v}</div><div style={{fontSize:11,color:'rgba(255,255,255,.38)',marginTop:2}}>{s.l}</div></div>)}</div>}
+      <div style={{display:'flex',gap:7,marginBottom:16}}>{['All','Mild','Medium','Severe'].map(f=><button key={f} onClick={()=>setFilter(f)} className="btn btn-sm" style={{flex:1,borderRadius:20,background:filter===f?'linear-gradient(135deg,#00e5c3,#00a896)':'rgba(255,255,255,.06)',color:filter===f?'#03091a':'rgba(255,255,255,.42)',border:filter===f?'none':'1px solid rgba(255,255,255,.08)',fontSize:11}}>{f}</button>)}</div>
+      {filtered.length===0?<div style={{textAlign:'center',padding:'50px 0',color:'rgba(255,255,255,.26)'}}><div style={{fontSize:50,marginBottom:14}}>📋</div><p>{hist.length===0?'No history yet. Use the Symptom Checker!':'No records for this filter.'}</p></div>
+      :[...filtered].reverse().map((h,i)=>{const sv=SEV[h.sev];return(<div key={i} style={{display:'flex',alignItems:'center',gap:11,padding:'12px 13px',borderRadius:13,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)',marginBottom:7}}>
+        <div style={{width:42,height:42,borderRadius:11,flexShrink:0,background:sv.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{h.em||'🩺'}</div>
+        <div style={{flex:1}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}><p style={{fontWeight:700,fontSize:13,textTransform:'capitalize'}}>{h.sym}</p><div style={{padding:'3px 8px',borderRadius:12,background:sv.bg,color:sv.color,fontSize:10,fontWeight:800,flexShrink:0,marginLeft:7}}>{sv.icon} {sv.label}</div></div><p style={{fontSize:11,color:'rgba(255,255,255,.33)',marginTop:3}}>🗓 {h.date}</p></div>
+      </div>);})}
+    </div>
+  );
+}
+
+/* ══════════════ AI CHATBOT (Phase 8 — Real Claude API) ══════════════ */
+function Chatbot(){
+  const[msgs,setMsgs]=useState([{r:'b',text:"Hi! I'm VitaBot 🤖 powered by Claude AI. Ask me anything about symptoms, medications, fitness, nutrition, or general health!"}]);
+  const[input,setInput]=useState('');
+  const[loading,setLoading]=useState(false);
+  const endRef=useRef(null);
+  useEffect(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),[msgs]);
+  async function send(txt){
+    if(!txt.trim()||loading)return;
+    const msg=txt.trim();setInput('');
+    setMsgs(p=>[...p,{r:'u',text:msg}]);setLoading(true);
+    try{
+      const history=msgs.filter(m=>m.r!=='loading').map(m=>({role:m.r==='u'?'user':'assistant',content:m.text}));
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,
+          system:'You are VitaBot, a warm and helpful AI health assistant for VitaVoice — a smart healthcare app for users in Odisha, India. Give clear, helpful health guidance in 2-4 sentences. Always remind users to consult a doctor for serious issues. Mention emergency number 7735591976 when appropriate.',
+          messages:[...history,{role:'user',content:msg}]})});
+      const data=await res.json();
+      setMsgs(p=>[...p,{r:'b',text:data.content?.[0]?.text||'I\'m having trouble connecting. Please try again shortly!'}]);
+    }catch{setMsgs(p=>[...p,{r:'b',text:'Trouble connecting to AI right now. For urgent health concerns, please call 7735591976 or consult a nearby doctor.'}]);}
+    setLoading(false);
+  }
+  const QUICK=['Fever advice','Headache remedy','BP management','Fitness tips','Heart health','Sleep better','Emergency?','Diet advice'];
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100vh'}}>
+      <div style={{padding:'16px 15px 12px',display:'flex',alignItems:'center',gap:13,background:'rgba(3,9,26,.97)',backdropFilter:'blur(18px)',borderBottom:'1px solid rgba(255,255,255,.07)'}}>
+        <div style={{width:46,height:46,borderRadius:'50%',background:'linear-gradient(135deg,#00e5c3,#7b61ff)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,boxShadow:'0 0 18px rgba(0,229,195,.24)'}}>🤖</div>
+        <div><h2 className="brand" style={{fontSize:21,letterSpacing:.5}}>VITA<span style={{color:'#00e5c3'}}>BOT</span> <span style={{fontSize:12,fontFamily:'Nunito',fontWeight:700,color:'#7b61ff',letterSpacing:0}}>AI</span></h2><div style={{display:'flex',alignItems:'center',gap:5,marginTop:2}}><div style={{width:6,height:6,borderRadius:'50%',background:'#00c875',animation:'pulse 1.5s infinite'}}/><span style={{fontSize:11,color:'#00c875'}}>Powered by Claude Sonnet</span></div></div>
+      </div>
+      <div style={{padding:'9px 14px 6px',display:'flex',gap:6,overflowX:'auto',borderBottom:'1px solid rgba(255,255,255,.05)',flexShrink:0}}>{QUICK.map(q=><button key={q} onClick={()=>send(q)} className="btn btn-ghost btn-xs" style={{borderRadius:20,whiteSpace:'nowrap'}}>{q}</button>)}</div>
+      <div style={{flex:1,overflowY:'auto',padding:'13px 14px 9px'}}>
+        {msgs.map((m,i)=><div key={i} style={{display:'flex',justifyContent:m.r==='u'?'flex-end':'flex-start',marginBottom:10,alignItems:'flex-end',gap:7}}>
+          {m.r==='b'&&<div style={{width:28,height:28,borderRadius:'50%',background:'linear-gradient(135deg,#00e5c3,#7b61ff)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>🤖</div>}
+          <div className={`cbubble ${m.r==='u'?'u':'b'}`}>{m.text}</div>
+        </div>)}
+        {loading&&<div style={{display:'flex',alignItems:'flex-end',gap:7,marginBottom:10}}><div style={{width:28,height:28,borderRadius:'50%',background:'linear-gradient(135deg,#00e5c3,#7b61ff)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🤖</div><div style={{padding:'10px 14px',borderRadius:16,borderBottomLeftRadius:4,background:'rgba(255,255,255,.07)',display:'flex',gap:4,alignItems:'center'}}><div className="dot"/><div className="dot"/><div className="dot"/></div></div>}
+        <div ref={endRef}/>
+      </div>
+      <div style={{padding:'11px 14px 26px',borderTop:'1px solid rgba(255,255,255,.07)',background:'rgba(3,9,26,.97)',flexShrink:0}}>
+        <div style={{display:'flex',gap:9}}><input className="inp" placeholder="Ask VitaBot anything about your health…" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!loading&&send(input)} disabled={loading}/><button className="btn btn-teal" onClick={()=>send(input)} disabled={loading||!input.trim()} style={{padding:'12px 16px',flexShrink:0}}>➤</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════ HEALTH REPORT (Phase 8 AI) ══════════════ */
+function HealthReport({hist,user}){
+  const[report,setReport]=useState(null);
+  const[loading,setLoading]=useState(false);
+  const steps=ls('vv_steps',6842);const hr=ls('vv_hr',72);const water=ls('vv_water',6);const sleep=ls('vv_sleep',7.2);
+  const meds=ls('vv_meds',[]);
+  const sevC={mild:hist.filter(h=>h.sev==='mild').length,medium:hist.filter(h=>h.sev==='medium').length,severe:hist.filter(h=>h.sev==='severe').length};
+  const score=Math.min(96,Math.max(32,72+Math.round((steps/10000)*14)+Math.round((water/8)*8)-sevC.severe*12));
+  const bmi=user?.weight&&user?.height?+(+user.weight/(+user.height/100)**2).toFixed(1):null;
+  async function genReport(){
+    setLoading(true);
+    try{
+      const ctx=`Patient: ${user?.name}, Age: ${user?.age}, Blood: ${user?.blood||'Unknown'}, BMI: ${bmi||'Unknown'}. Recent symptoms: ${hist.slice(-5).map(h=>h.sym).join(', ')||'None'}. Steps today: ${steps}, Heart rate: ${hr}bpm, Water: ${water} glasses, Sleep: ${sleep}h. Current medicines: ${meds.map(m=>m.name).join(', ')||'None'}.`;
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,
+          system:'You are a health report AI for VitaVoice app. Return ONLY valid JSON (no markdown, no backticks) with keys: "summary" (2-sentence overview), "strengths" (array of 3 short strings), "concerns" (array of 3 short strings), "recommendations" (array of 4 short actionable tips), "weeklyGoal" (one specific goal string).',
+          messages:[{role:'user',content:`Generate a weekly health report for this patient: ${ctx}`}]})});
+      const data=await res.json();
+      let txt=(data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim();
+      setReport(JSON.parse(txt));
+    }catch{setReport({summary:`${user?.name||'Patient'}'s health data shows moderate activity. Consistent habits will lead to better long-term outcomes.`,strengths:['Regular health tracking via VitaVoice','Active medication monitoring','Consistent symptom checking'],concerns:['Daily water intake can be increased','Step count below the 10,000 daily goal','Sleep duration needs consistency'],recommendations:['Walk 30 minutes every morning before breakfast','Set a fixed sleep and wake time daily','Add one portion of leafy greens to every meal','Practice 5-minute deep breathing before bed'],weeklyGoal:'Walk 10,000 steps every day and drink at least 8 glasses of water daily.'});}
+    setLoading(false);
+  }
+  return(
+    <div className="page fade">
+      <h2 className="brand" style={{fontSize:26,letterSpacing:.5,marginBottom:5}}>HEALTH <span style={{color:'#00e5c3'}}>REPORT</span></h2>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:18}}>AI-generated weekly health analysis</p>
+      <div style={{background:'linear-gradient(135deg,rgba(0,229,195,.09),rgba(123,97,255,.07))',border:'1px solid rgba(0,229,195,.18)',borderRadius:18,padding:20,marginBottom:18,display:'flex',gap:18,alignItems:'center'}}>
+        <div style={{position:'relative',width:82,height:82,flexShrink:0}}>
+          <svg width="82" height="82" viewBox="0 0 82 82"><circle cx="41" cy="41" r="33" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="6"/><circle cx="41" cy="41" r="33" fill="none" stroke="url(#rg2)" strokeWidth="6" strokeLinecap="round" strokeDasharray="207.3" strokeDashoffset={207.3*(1-score/100)} style={{transform:'rotate(-90deg)',transformOrigin:'center'}}/><defs><linearGradient id="rg2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#00e5c3"/><stop offset="100%" stopColor="#7b61ff"/></linearGradient></defs></svg>
+          <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}><span className="brand" style={{fontSize:22,color:'#00e5c3',lineHeight:1}}>{score}</span><span style={{fontSize:8,color:'rgba(255,255,255,.33)'}}>/100</span></div>
+        </div>
+        <div><p className="brand" style={{fontSize:19,letterSpacing:.5}}>WEEKLY <span style={{color:'#00e5c3'}}>SCORE</span></p><p style={{fontSize:12,color:'rgba(255,255,255,.48)',marginTop:5,lineHeight:1.5}}>Based on activity, vitals & symptom history.</p>{bmi&&<p style={{fontSize:11,color:'rgba(255,255,255,.36)',marginTop:4}}>BMI: {bmi} · Blood: {user?.blood||'–'}</p>}</div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:7,marginBottom:18}}>
+        {[{label:'Total Checks',val:hist.length,icon:'🩺',c:'#7b61ff'},{label:'Severe Events',val:sevC.severe,icon:'🚨',c:'#ff3860'},{label:'Steps Today',val:`${(steps/1000).toFixed(1)}k`,icon:'👟',c:'#00e5c3'}].map(s=><div key={s.label} style={{textAlign:'center',padding:'12px 6px',borderRadius:12,background:`${s.c}0e`,border:`1px solid ${s.c}24`}}><div style={{fontSize:20,marginBottom:4}}>{s.icon}</div><div className="brand" style={{fontSize:18,color:s.c}}>{s.val}</div><div style={{fontSize:9,color:'rgba(255,255,255,.32)',marginTop:2,lineHeight:1.2}}>{s.label}</div></div>)}
+      </div>
+      {!report&&<button className="btn btn-teal" onClick={genReport} disabled={loading} style={{width:'100%',padding:15,fontSize:15,marginBottom:16}}>
+        {loading?<><div style={{width:16,height:16,border:'2px solid rgba(0,0,0,.3)',borderTopColor:'#03091a',borderRadius:'50%',animation:'spin .8s linear infinite'}}/> Generating AI Report…</>:'✨ Generate AI Health Report'}
+      </button>}
+      {report&&<div className="slide">
+        <div className="glass" style={{padding:17,marginBottom:12}}><p style={{fontSize:11,color:'#00e5c3',fontWeight:700,letterSpacing:1,marginBottom:7}}>📋 AI SUMMARY</p><p style={{fontSize:14,color:'rgba(255,255,255,.78)',lineHeight:1.65}}>{report.summary}</p></div>
+        <div style={{padding:15,borderRadius:13,marginBottom:12,background:'rgba(123,97,255,.09)',border:'1px solid rgba(123,97,255,.22)'}}><p style={{fontSize:11,color:'#7b61ff',fontWeight:700,letterSpacing:1,marginBottom:6}}>🎯 THIS WEEK'S GOAL</p><p style={{fontSize:14,color:'rgba(255,255,255,.8)',lineHeight:1.6}}>{report.weeklyGoal}</p></div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:11,marginBottom:12}}>
+          <div className="card" style={{padding:15}}><p style={{fontSize:11,color:'#00c875',fontWeight:700,letterSpacing:1,marginBottom:9}}>✅ STRENGTHS</p>{(report.strengths||[]).map((s,i)=><div key={i} style={{display:'flex',gap:6,marginBottom:6,alignItems:'flex-start'}}><span style={{color:'#00c875',flexShrink:0}}>▸</span><p style={{fontSize:12,color:'rgba(255,255,255,.7)',lineHeight:1.4}}>{s}</p></div>)}</div>
+          <div className="card" style={{padding:15}}><p style={{fontSize:11,color:'#ffbe0b',fontWeight:700,letterSpacing:1,marginBottom:9}}>⚠ CONCERNS</p>{(report.concerns||[]).map((c,i)=><div key={i} style={{display:'flex',gap:6,marginBottom:6,alignItems:'flex-start'}}><span style={{color:'#ffbe0b',flexShrink:0}}>▸</span><p style={{fontSize:12,color:'rgba(255,255,255,.7)',lineHeight:1.4}}>{c}</p></div>)}</div>
+        </div>
+        <div className="glass" style={{padding:17,marginBottom:12}}><p style={{fontSize:11,color:'#7b61ff',fontWeight:700,letterSpacing:1,marginBottom:11}}>💡 AI RECOMMENDATIONS</p>{(report.recommendations||[]).map((r,i)=><div key={i} style={{display:'flex',gap:11,marginBottom:10,padding:'10px 11px',borderRadius:9,background:'rgba(255,255,255,.03)'}}><div style={{width:22,height:22,borderRadius:'50%',background:'rgba(123,97,255,.17)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:10,fontWeight:800,color:'#7b61ff'}}>{i+1}</div><p style={{fontSize:13,color:'rgba(255,255,255,.75)',lineHeight:1.55}}>{r}</p></div>)}</div>
+        <button className="btn btn-ghost" onClick={()=>setReport(null)} style={{width:'100%'}}>🔄 Regenerate</button>
+      </div>}
+    </div>
+  );
+}
+
+/* ══════════════ PROFILE EDITOR (Phase 9) ══════════════ */
+function ProfileEdit({user,onSave,back}){
+  const[f,setF]=useState({...user});
+  const[saved,setSaved]=useState(false);
+  const up=(k,v)=>setF(x=>({...x,[k]:v}));
+  function save(){lsSet('vv_user',f);onSave(f);setSaved(true);setTimeout(()=>{setSaved(false);back();},700);}
+  return(
+    <div className="subpage fade">
+      <h2 className="brand" style={{fontSize:26,letterSpacing:.5,marginBottom:5}}>EDIT <span style={{color:'#00e5c3'}}>PROFILE</span></h2>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:20}}>Update your personal health data</p>
+      <div style={{textAlign:'center',marginBottom:22}}><div style={{width:76,height:76,borderRadius:'50%',background:'linear-gradient(135deg,#7b61ff,#00e5c3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:800,color:'#03091a',margin:'0 auto 9px'}}>{inits(f.name||'VV')}</div><p style={{fontSize:12,color:'rgba(255,255,255,.3)'}}>Profile initials shown from your name</p></div>
+      <div style={{display:'flex',flexDirection:'column',gap:11}}>
+        {[{l:'Full Name',k:'name',t:'text',p:'Your full name'},{l:'Age',k:'age',t:'number',p:'Your age'},{l:'Email',k:'email',t:'email',p:'your@email.com'},{l:'Weight (kg)',k:'weight',t:'number',p:'e.g. 70'},{l:'Height (cm)',k:'height',t:'number',p:'e.g. 175'},{l:'Emergency Contact',k:'emergency',t:'tel',p:'10-digit mobile'}].map(field=><div key={field.k}><p style={{fontSize:12,color:'rgba(255,255,255,.42)',marginBottom:5,fontWeight:700}}>{field.l}</p><input className="inp" type={field.t} placeholder={field.p} value={f[field.k]||''} onChange={e=>up(field.k,e.target.value)}/></div>)}
+        <div><p style={{fontSize:12,color:'rgba(255,255,255,.42)',marginBottom:5,fontWeight:700}}>Blood Group</p><select className="inp" value={f.blood||'O+'} onChange={e=>up('blood',e.target.value)}>{BLOOD.map(b=><option key={b}>{b}</option>)}</select></div>
+        <div><p style={{fontSize:12,color:'rgba(255,255,255,.42)',marginBottom:5,fontWeight:700}}>Language</p><select className="inp" value={f.lang||'english'} onChange={e=>up('lang',e.target.value)}><option value="english">🇬🇧 English</option><option value="hindi">🇮🇳 Hindi</option><option value="odia">🇮🇳 Odia</option><option value="bengali">🇮🇳 Bengali</option></select></div>
+        <button className="btn btn-teal" onClick={save} style={{width:'100%',padding:14,fontSize:15,marginTop:5}}>{saved?'✅ Saved!':'💾 Save Profile'}</button>
+        <button className="btn btn-ghost" onClick={back} style={{width:'100%'}}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════ NOTIFICATIONS ══════════════ */
+function Notifications({notifs,onRead,onClear}){
+  useEffect(()=>{onRead();},[]);
+  return(
+    <div className="page fade">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}><h2 className="brand" style={{fontSize:26,letterSpacing:.5}}>NOTIFICATIONS <span style={{color:'#00e5c3'}}>🔔</span></h2>{notifs.length>0&&<button className="btn btn-ghost btn-sm" onClick={onClear} style={{color:'#ff3860'}}>Clear All</button>}</div>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:18}}>App alerts & health reminders</p>
+      {notifs.length===0?<div style={{textAlign:'center',padding:'50px 0',color:'rgba(255,255,255,.26)'}}><div style={{fontSize:50,marginBottom:14}}>🔕</div><p>No notifications yet.</p></div>
+      :[...notifs].reverse().map((n,i)=><div key={i} style={{display:'flex',gap:12,padding:'13px 14px',borderRadius:13,background:n.read?'rgba(255,255,255,.02)':'rgba(0,229,195,.05)',border:`1px solid ${n.read?'rgba(255,255,255,.05)':'rgba(0,229,195,.14)'}`,marginBottom:9}}>
+        <span style={{fontSize:22,flexShrink:0}}>{n.icon}</span>
+        <div style={{flex:1}}><p style={{fontWeight:700,fontSize:14,color:n.read?'rgba(255,255,255,.55)':'#e2e8f4'}}>{n.title}</p><p style={{fontSize:12,color:'rgba(255,255,255,.35)',marginTop:3}}>{n.msg}</p><p style={{fontSize:10,color:'rgba(255,255,255,.22)',marginTop:3}}>{n.time}</p></div>
+        {!n.read&&<div style={{width:8,height:8,borderRadius:'50%',background:'#00e5c3',marginTop:4,flexShrink:0}}/>}
+      </div>)}
+    </div>
+  );
+}
+
+/* ══════════════ MORE / SETTINGS (Phase 9) ══════════════ */
+function More({user,nav,logout,demo,setDemo,voice,setVoice,offline,setOffline,toast}){
+  const tools=[
+    {icon:'💊',label:'Medicine Reminders',sub:'reminders',c:'#00e5c3',desc:'Voice-powered alerts'},
+    {icon:'🏃',label:'Fitness Tracker',sub:'fitness',c:'#ff6b8a',desc:'Steps, HR, sleep, calories'},
+    {icon:'📦',label:'Medicine Manager',sub:'medicines',c:'#ffbe0b',desc:'Stock tracking & refill alerts'},
+    {icon:'📊',label:'Health Report',sub:'report',c:'#7b61ff',desc:'AI weekly analysis'},
+    {icon:'📋',label:'Health History',sub:'history',c:'#00c875',desc:'Past symptom records'},
+    {icon:'🤖',label:'VitaBot AI Chat',sub:'chat',c:'#e84393',desc:'Real Claude AI health assistant'},
+  ];
+  return(
+    <div className="page fade">
+      <h2 className="brand" style={{fontSize:26,letterSpacing:.5,marginBottom:5}}>TOOLS & <span style={{color:'#00e5c3'}}>SETTINGS</span></h2>
+      <p style={{color:'rgba(255,255,255,.38)',fontSize:13,marginBottom:18}}>All features, settings & account</p>
+      <div className="glass" style={{padding:17,marginBottom:18,display:'flex',gap:15,alignItems:'center'}}>
+        <div style={{width:58,height:58,borderRadius:'50%',background:'linear-gradient(135deg,#7b61ff,#00e5c3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:21,fontWeight:800,color:'#03091a',flexShrink:0}}>{inits(user?.name||'VV')}</div>
+        <div style={{flex:1,minWidth:0}}><p style={{fontWeight:800,fontSize:16}}>{user?.name}</p><p style={{fontSize:12,color:'rgba(255,255,255,.38)',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</p><p style={{fontSize:11,color:'rgba(255,255,255,.26)',marginTop:2}}>Age {user?.age} · {user?.blood||'–'} · 📞 {user?.emergency}</p></div>
+        <button className="btn btn-ghost btn-sm" onClick={()=>nav('sub','profile')}>✏️</button>
+      </div>
+      <p style={{fontSize:11,color:'rgba(255,255,255,.3)',letterSpacing:1.5,marginBottom:9,fontWeight:700}}>HEALTH TOOLS</p>
+      {tools.map(t=><button key={t.sub} onClick={()=>nav('sub',t.sub)} className="btn" style={{width:'100%',display:'flex',alignItems:'center',gap:13,padding:'13px 15px',borderRadius:13,marginBottom:7,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',textAlign:'left'}}>
+        <div style={{width:44,height:44,borderRadius:12,flexShrink:0,background:`${t.c}15`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:21}}>{t.icon}</div>
+        <div style={{flex:1,minWidth:0}}><span style={{display:'block',fontSize:14,fontWeight:700,color:'#e2e8f4'}}>{t.label}</span><span style={{display:'block',fontSize:11,color:'rgba(255,255,255,.33)',marginTop:2}}>{t.desc}</span></div>
+        <span style={{color:'rgba(255,255,255,.18)',fontSize:17}}>›</span>
+      </button>)}
+      <p style={{fontSize:11,color:'rgba(255,255,255,.3)',letterSpacing:1.5,marginBottom:9,marginTop:18,fontWeight:700}}>SETTINGS</p>
+      {/* Demo Mode */}
+      <div className="card" style={{padding:'13px 15px',marginBottom:9}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:demo?8:0}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:19}}>🎭</span><div><p style={{fontWeight:700,fontSize:14}}>Demo Mode</p><p style={{fontSize:11,color:'rgba(255,255,255,.33)',marginTop:1}}>Disables real calls for presentation</p></div></div>
+          <button className={`tog ${demo?'on':'off'}`} onClick={()=>{setDemo(!demo);toast({icon:!demo?'🎭':'✅',title:!demo?'Demo Mode ON':'Demo Mode OFF',msg:!demo?'SOS will simulate — no real calls.':'Real emergency calls enabled.'});}}/>
+        </div>
+        {demo&&<div style={{padding:'7px 11px',borderRadius:7,background:'rgba(255,190,11,.1)',border:'1px solid rgba(255,190,11,.22)',fontSize:12,color:'#ffbe0b',fontWeight:700}}>⚠ Active — SOS shows simulation; no real dial</div>}
+      </div>
+      {/* Voice */}
+      <div className="card" style={{padding:'13px 15px',marginBottom:9,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:19}}>{voice?'🔊':'🔇'}</span><div><p style={{fontWeight:700,fontSize:14}}>Voice Alerts</p><p style={{fontSize:11,color:'rgba(255,255,255,.33)',marginTop:1}}>Text-to-speech for reminders & results</p></div></div>
+        <button className={`tog ${voice?'on':'off'}`} onClick={()=>setVoice(!voice)}/>
+      </div>
+      {/* Offline */}
+      <div className="card" style={{padding:'13px 15px',marginBottom:9,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:19}}>📵</span><div><p style={{fontWeight:700,fontSize:14}}>Offline Mode</p><p style={{fontSize:11,color:'rgba(255,255,255,.33)',marginTop:1}}>Use static data when no internet</p></div></div>
+        <button className={`tog ${offline?'on':'off'}`} onClick={()=>setOffline(!offline)}/>
+      </div>
+      {/* SOS */}
+      <div style={{padding:'13px 15px',borderRadius:13,marginTop:8,marginBottom:9,background:'rgba(255,56,96,.07)',border:'1px solid rgba(255,56,96,.17)',display:'flex',alignItems:'center',gap:12}}>
+        <div style={{fontSize:24}}>🆘</div>
+        <div style={{flex:1}}><p style={{fontWeight:700,fontSize:14,color:'#ff6b8a'}}>Emergency Contact</p><p style={{fontSize:13,color:'rgba(255,255,255,.42)',marginTop:2}}>+91-{user?.emergency||'7735591976'}</p></div>
+        <a href="tel:7735591976" className="btn btn-red btn-sm" style={{textDecoration:'none'}}>📞 Call</a>
+      </div>
+      <button onClick={logout} className="btn btn-ghost" style={{width:'100%',color:'#ff3860',border:'1px solid rgba(255,56,96,.23)',marginTop:7}}>🚪 Logout</button>
+      <div style={{textAlign:'center',marginTop:22}}><p style={{fontSize:11,color:'rgba(255,255,255,.16)',letterSpacing:1}}>MedEcho v2.0 </p><p style={{fontSize:10,color:'rgba(255,255,255,.1)',marginTop:3}}>Smart Healthcare Demo · Odisha, India · SOS: 7735591976</p></div>
+    </div>
+  );
+}
+
+/* ══════════════ ROOT APP ══════════════ */
+function App(){
+  const[screen,setScreen]=useState('splash');
+  const[tab,setTab]=useState('dashboard');
+  const[sub,setSub]=useState(null);
+  const[user,setUser]=useState(null);
+  const[hist,setHist]=useState(()=>ls('vv_hist',[]));
+  const[lastSym,setLastSym]=useState(null);
+  const[demo,setDemo]=useState(()=>ls('vv_demo',false));
+  const[voice,setVoice]=useState(()=>ls('vv_voice',true));
+  const[offline,setOffline]=useState(()=>ls('vv_offline',false));
+  const[sos,setSos]=useState(false);
+  const[toastData,setToastData]=useState(null);
+  const[notifs,setNotifs]=useState(()=>ls('vv_notifs',[
+    {icon:'💊',title:'Medicine Reminder',msg:'Time to take Vitamin D3 (1 capsule)',time:'Today 1:00 PM',read:false},
+    {icon:'🏃',title:'Daily Step Goal',msg:'You are at 68% of your 10,000 steps goal!',time:'Today 12:00 PM',read:false},
+    {icon:'🆘',title:'SOS Ready',msg:'Emergency contact 7735591976 is configured.',time:'Yesterday',read:true},
+  ]));
+  const unread=notifs.filter(n=>!n.read).length;
+
+  useEffect(()=>{const u=ls('vv_user',null);if(u){setUser(u);setTimeout(()=>setScreen('app'),3100);}else{setTimeout(()=>setScreen('auth'),3100);}},[]);
+  useEffect(()=>lsSet('vv_hist',hist),[hist]);
+  useEffect(()=>lsSet('vv_demo',demo),[demo]);
+  useEffect(()=>lsSet('vv_voice',voice),[voice]);
+  useEffect(()=>lsSet('vv_offline',offline),[offline]);
+  useEffect(()=>lsSet('vv_notifs',notifs),[notifs]);
+
+  function addNotif(n){setNotifs(p=>[...p,{...n,read:false}]);}
+  function showToast(t){setToastData(t);}
+  function addHist(item){
+    setHist(p=>[...p,item]);setLastSym(item);
+    addNotif({icon:item.em||'🩺',title:`Symptom: ${item.sym}`,msg:`Severity: ${SEV[item.sev].label}. View first aid guide.`,time:'Just now'});
+  }
+  function nav(t,s){
+    if(t==='sos'){setSos(true);return;}
+    if(t==='sub'){setSub(s);setTab('more');}
+    else{setTab(t);setSub(null);}
+  }
+  function logout(){['vv_user','vv_hist','vv_meds','vv_rems','vv_notifs'].forEach(k=>localStorage.removeItem(k));setUser(null);setScreen('auth');setTab('dashboard');setSub(null);}
+
+  if(screen==='splash')return<Splash done={()=>setScreen(ls('vv_user',null)?'app':'auth')}/>;
+  if(screen==='auth')return<Auth onLogin={u=>{setUser(u);setScreen('app');}}/>;
+  if(sos)return<SOSScreen user={user} demo={demo} cancel={()=>setSos(false)}/>;
+
+  const SUB_LABELS={reminders:'Reminders',fitness:'Fitness Tracker',medicines:'Medicine Manager',history:'Health History',chat:'VitaBot AI',report:'Health Report',profile:'Edit Profile',notifications:'Notifications'};
+
+  function renderContent(){
+    if(sub&&tab==='more'){
+      switch(sub){
+        case'reminders':return<Reminders voice={voice}/>;
+        case'fitness':return<Fitness/>;
+        case'medicines':return<Medicines/>;
+        case'history':return<HistoryPage hist={hist} clear={()=>setHist([])}/>;
+        case'chat':return<Chatbot/>;
+        case'report':return<HealthReport hist={hist} user={user}/>;
+        case'profile':return<ProfileEdit user={user} onSave={u=>{setUser(u);showToast({icon:'✅',title:'Profile Updated',msg:'Your health profile has been saved.'});}} back={()=>setSub(null)}/>;
+        case'notifications':return<Notifications notifs={notifs} onRead={()=>setNotifs(n=>n.map(x=>({...x,read:true})))} onClear={()=>setNotifs([])}/>;
+        default:return null;
+      }
+    }
+    switch(tab){
+      case'dashboard':return<Dashboard user={user} hist={hist} nav={nav} notifs={notifs} demo={demo}/>;
+      case'symptoms':return<Symptoms onAdd={addHist} voice={voice} demo={demo}/>;
+      case'doctors':return<Doctors lastSym={lastSym}/>;
+      case'more':return<More user={user} nav={nav} logout={logout} demo={demo} setDemo={setDemo} voice={voice} setVoice={setVoice} offline={offline} setOffline={setOffline} toast={showToast}/>;
+      default:return<Dashboard user={user} hist={hist} nav={nav} notifs={notifs} demo={demo}/>;
+    }
+  }
+
+  const NAV=[{id:'dashboard',icon:'🏠',label:'Home'},{id:'symptoms',icon:'🎙️',label:'Symptoms'},{id:'__sos',special:true},{id:'doctors',icon:'👨‍⚕️',label:'Doctors'},{id:'more',icon:'☰',label:'More'}];
+
+  return(
+    <div>
+      <Toast t={toastData} close={()=>setToastData(null)}/>
+      {/* Offline banner */}
+      {offline&&!sub&&<div style={{position:'fixed',top:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:480,zIndex:180,padding:'7px 15px',background:'rgba(255,190,11,.1)',borderBottom:'1px solid rgba(255,190,11,.22)',display:'flex',alignItems:'center',justifyContent:'center',gap:7,fontSize:12,color:'#ffbe0b',fontWeight:700}}>📵 Offline Mode — using cached data</div>}
+      {/* Sub-page header */}
+      {sub&&tab==='more'&&<div className="subhdr"><button className="btn btn-ghost btn-sm" onClick={()=>setSub(null)}>← Back</button><p style={{fontWeight:700,fontSize:14,color:'rgba(255,255,255,.7)'}}>{SUB_LABELS[sub]||sub}</p></div>}
+      <div style={{paddingTop:(sub&&tab==='more')?56:offline?34:0}}>{renderContent()}</div>
+      {/* Bottom Nav */}
+      <nav className="bnav">
+        {NAV.map(n=>{
+          if(n.special)return<button key="sos" className="sos-btn" onClick={()=>nav('sos')} title="SOS Emergency — Calls 7735591976">🆘</button>;
+          const active=tab===n.id&&!sub;
+          return(
+            <button key={n.id} className={`nbtn ${active?'active':''}`} onClick={()=>{setTab(n.id);setSub(null);}}>
+              <span className="nicon" style={{position:'relative'}}>{n.icon}{n.id==='more'&&unread>0&&<span className="badge">{unread}</span>}</span>
+              <span>{n.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
